@@ -199,6 +199,6 @@ git push origin main
 
 ---
 
-**Deployment Date**: January 17, 2026  
+**Deployment Date**: January 17, 2026 (Redeployed at 21:50 IST)
 **Status**: ✅ Live on Vercel  
-**Version**: 2.0.0 (Responsive + Validation)
+**Version**: 2.1.1 (Sidebar Fix Patch)
