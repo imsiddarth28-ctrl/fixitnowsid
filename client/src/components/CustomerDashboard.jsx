@@ -38,7 +38,6 @@ const CustomerDashboard = () => {
             <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 style={{
-                    display: 'none',
                     position: 'fixed',
                     top: '1rem',
                     left: '1rem',
@@ -60,7 +59,6 @@ const CustomerDashboard = () => {
                 <div
                     onClick={() => setMobileMenuOpen(false)}
                     style={{
-                        display: 'none',
                         position: 'fixed',
                         inset: 0,
                         background: 'rgba(0,0,0,0.5)',
@@ -279,6 +277,15 @@ const CustomerDashboard = () => {
                 @keyframes fadeIn {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+
+                /* Default: Hide mobile elements on desktop */
+                .mobile-menu-toggle {
+                    display: none;
+                }
+
+                .mobile-backdrop {
+                    display: none;
                 }
 
                 /* Mobile Responsive Styles */
