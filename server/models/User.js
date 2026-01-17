@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     phone: { type: String },
     role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
+    profilePhoto: { type: String, default: '' }, // Base64 or URL
+    address: { type: String, default: '' },
+    bio: { type: String, default: '' },
     savedLocations: [{
         label: String,
         address: String,

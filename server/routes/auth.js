@@ -118,4 +118,71 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// UPDATE USER PROFILE
+router.put('/profile/user/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phone, profilePhoto, address, bio } = req.body;
+
+        // Prepare update object (only include provided fields)
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (phone) {
+            // Check if new phone is already used by another user
+            const existingUserByPhone = await User.findOne({ phone, _id: { $ne: id } });
+            const existingTechByPhone = await Technician.findOne({ phone });
+            if (existingUserByPhone || existingTechByPhone) {
+                return res.status(400).json({ message: 'Phone number already in use' });
+            }
+            updateData.phone = phone;
+        }
+        if (profilePhoto !== undefined) updateData.profilePhoto = profilePhoto;
+        if (address !== undefined) updateData.address = address;
+        if (bio !== undefined) updateData.bio = bio;
+
+        const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ message: 'Profile updated successfully', user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// UPDATE TECHNICIAN PROFILE
+router.put('/profile/technician/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phone, profilePhoto, address, bio, experience, serviceType } = req.body;
+
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (phone) {
+            // Check if new phone is already used
+            const existingTechByPhone = await Technician.findOne({ phone, _id: { $ne: id } });
+            const existingUserByPhone = await User.findOne({ phone });
+            if (existingTechByPhone || existingUserByPhone) {
+                return res.status(400).json({ message: 'Phone number already in use' });
+            }
+            updateData.phone = phone;
+        }
+        if (profilePhoto !== undefined) updateData.profilePhoto = profilePhoto;
+        if (address !== undefined) updateData.address = address;
+        if (bio !== undefined) updateData.bio = bio;
+        if (experience !== undefined) updateData.experience = experience;
+        if (serviceType) updateData.serviceType = serviceType;
+
+        const updatedTech = await Technician.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+        if (!updatedTech) {
+            return res.status(404).json({ message: 'Technician not found' });
+        }
+
+        res.json({ message: 'Profile updated successfully', technician: updatedTech });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

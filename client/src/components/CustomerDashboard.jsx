@@ -5,16 +5,18 @@ import TechnicianList from './TechnicianList';
 import Wallet from './Wallet';
 import BookingHistory from './BookingHistory';
 import Support from './Support';
+import ProfileSettings from './ProfileSettings';
 
 const CustomerDashboard = () => {
     const { user, logout } = useAuth();
-    const [view, setView] = useState('services'); // services, wallet, history, support, reviews
+    const [view, setView] = useState('services'); // services, wallet, history, support, reviews, profile
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const menuItems = [
         { id: 'services', label: 'Service Search' },
         { id: 'wallet', label: 'Payment & Wallet' },
         { id: 'history', label: 'Booking History' },
+        { id: 'profile', label: 'Profile Settings' },
         { id: 'reviews', label: 'My Reviews' },
         { id: 'support', label: 'Support & Help' }
     ];
@@ -240,6 +242,12 @@ const CustomerDashboard = () => {
                     {view === 'history' && (
                         <div className="animate-fade-in">
                             <BookingHistory />
+                        </div>
+                    )}
+
+                    {view === 'profile' && (
+                        <div className="animate-fade-in">
+                            <ProfileSettings />
                         </div>
                     )}
 

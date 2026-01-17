@@ -5,6 +5,9 @@ const technicianSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String, required: true },
+    profilePhoto: { type: String, default: '' }, // Base64 or URL
+    address: { type: String, default: '' },
+    bio: { type: String, default: '' },
     serviceType: { type: String, required: true }, // e.g., 'Plumber', 'Electrician'
     experience: { type: Number, default: 0 }, // Years of experience
     isAvailable: { type: Boolean, default: false },
