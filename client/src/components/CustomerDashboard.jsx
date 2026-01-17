@@ -9,6 +9,7 @@ import Support from './Support';
 const CustomerDashboard = () => {
     const { user, logout } = useAuth();
     const [view, setView] = useState('services'); // services, wallet, history, support, reviews
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const menuItems = [
         { id: 'services', label: 'Service Search' },
@@ -18,6 +19,11 @@ const CustomerDashboard = () => {
         { id: 'support', label: 'Support & Help' }
     ];
 
+    const handleMenuClick = (id) => {
+        setView(id);
+        setMobileMenuOpen(false); // Close mobile menu after selection
+    };
+
     return (
         <div style={{
             minHeight: '100vh',
@@ -26,6 +32,27 @@ const CustomerDashboard = () => {
             width: '100%',
             position: 'relative'
         }}>
+            {/* Mobile Menu Toggle */}
+            <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{
+                    display: 'none',
+                    position: 'fixed',
+                    top: '1rem',
+                    left: '1rem',
+                    zIndex: 1001,
+                    background: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    cursor: 'pointer',
+                    fontSize: '1.5rem'
+                }}
+                className="mobile-menu-toggle"
+            >
+                {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+
             {/* Sidebar */}
             <aside style={{
                 width: '280px',
@@ -37,8 +64,11 @@ const CustomerDashboard = () => {
                 position: 'fixed',
                 left: 0,
                 top: 0,
-                zIndex: 10
-            }}>
+                zIndex: 10,
+                background: 'var(--bg)',
+                transform: 'translateX(0)',
+                transition: 'transform 0.3s ease'
+            }} className="customer-sidebar">
                 <div style={{
                     fontFamily: 'var(--font-heading)',
                     fontWeight: 800,
@@ -53,7 +83,7 @@ const CustomerDashboard = () => {
                     {menuItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={() => setView(item.id)}
+                            onClick={() => handleMenuClick(item.id)}
                             style={{
                                 textAlign: 'left',
                                 padding: '0.75rem 1rem',
@@ -225,6 +255,29 @@ const CustomerDashboard = () => {
                 @keyframes fadeIn {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+
+                /* Mobile Responsive Styles */
+                @media (max-width: 768px) {
+                    .mobile-menu-toggle {
+                        display: block !important;
+                    }
+
+                    .customer-sidebar {
+                        transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'} !important;
+                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.3)' : 'none'};
+                    }
+
+                    main {
+                        margin-left: 0 !important;
+                        padding: 5rem 1.5rem 2rem !important;
+                    }
+                }
+
+                @media (min-width: 769px) {
+                    .customer-sidebar {
+                        transform: translateX(0) !important;
+                    }
                 }
             `}</style>
         </div>

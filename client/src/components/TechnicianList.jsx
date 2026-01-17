@@ -116,7 +116,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
     }
 
     return (
-        <div style={{ minHeight: '100vh', padding: '6rem 2rem 4rem' }}>
+        <div style={{ minHeight: '100vh', padding: 'clamp(2rem, 5vw, 6rem) clamp(1rem, 3vw, 2rem) 4rem' }}>
             {/* Header */}
             <div style={{ maxWidth: '1400px', margin: '0 auto', marginBottom: '3rem' }}>
                 <h1 style={{

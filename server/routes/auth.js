@@ -12,8 +12,25 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_fixitnow';
 router.post('/register/user', async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
-        let existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ message: 'User already exists' });
+
+        // Check if email exists in User collection
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already registered as a customer' });
+        }
+
+        // Check if email exists in Technician collection (prevent role switching)
+        const existingTech = await Technician.findOne({ email });
+        if (existingTech) {
+            return res.status(400).json({ message: 'This email is already registered as a technician. Please use a different email or login as technician.' });
+        }
+
+        // Check if phone number is already used
+        const existingUserByPhone = await User.findOne({ phone });
+        const existingTechByPhone = await Technician.findOne({ phone });
+        if (existingUserByPhone || existingTechByPhone) {
+            return res.status(400).json({ message: 'Phone number already registered' });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ name, email, password: hashedPassword, phone });
@@ -29,8 +46,25 @@ router.post('/register/user', async (req, res) => {
 router.post('/register/technician', async (req, res) => {
     try {
         const { name, email, password, phone, serviceType } = req.body;
-        let existingTech = await Technician.findOne({ email });
-        if (existingTech) return res.status(400).json({ message: 'Technician already exists' });
+
+        // Check if email exists in Technician collection
+        const existingTech = await Technician.findOne({ email });
+        if (existingTech) {
+            return res.status(400).json({ message: 'Email already registered as a technician' });
+        }
+
+        // Check if email exists in User collection (prevent role switching)
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'This email is already registered as a customer. Please use a different email or login as customer.' });
+        }
+
+        // Check if phone number is already used
+        const existingUserByPhone = await User.findOne({ phone });
+        const existingTechByPhone = await Technician.findOne({ phone });
+        if (existingUserByPhone || existingTechByPhone) {
+            return res.status(400).json({ message: 'Phone number already registered' });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const tech = new Technician({
