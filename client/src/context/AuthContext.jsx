@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import API_URL from '../config';
 
 const AuthContext = createContext();
 
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, role) => {
         try {
-            const res = await fetch('http://localhost:5000/api/auth/login', {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role })
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData, role) => {
         const endpoint = role === 'technician' ? '/register/technician' : '/register/user';
         try {
-            const res = await fetch(`http://localhost:5000/api/auth${endpoint}`, {
+            const res = await fetch(`${API_URL}/api/auth${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(userData)

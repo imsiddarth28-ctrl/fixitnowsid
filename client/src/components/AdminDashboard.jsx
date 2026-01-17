@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -19,7 +20,7 @@ const AdminDashboard = () => {
 
     const fetchTechnicians = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/technicians');
+            const res = await fetch(`${API_URL}/api/admin/technicians`);
             const data = await res.json();
             setTechnicians(data);
         } catch (err) { console.error(err); }
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
 
     const fetchBookings = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/bookings');
+            const res = await fetch(`${API_URL}/api/admin/bookings`);
             const data = await res.json();
             setBookings(data);
         } catch (err) { console.error(err); }
@@ -35,7 +36,7 @@ const AdminDashboard = () => {
 
     const approveTech = async (id) => {
         try {
-            await fetch(`http://localhost:5000/api/admin/approve-technician/${id}`, { method: 'PUT' });
+            await fetch(`${API_URL}/api/admin/approve-technician/${id}`, { method: 'PUT' });
             fetchTechnicians();
             alert('Technician verified successfully');
         } catch (err) { console.error(err); }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import BookingHistory from './BookingHistory'; // Assuming we want this viewable here too
+import API_URL from '../config';
 
 const TechnicianDashboard = () => {
     const { user, logout } = useAuth();
@@ -11,7 +12,7 @@ const TechnicianDashboard = () => {
     const toggleAvailability = async () => {
         try {
             const newState = !isAvailable;
-            await fetch(`http://localhost:5000/api/technicians/${user.id}/availability`, {
+            await fetch(`${API_URL}/api/technicians/${user.id}/availability`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isAvailable: newState })

@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
 const BookingHistory = () => {
     const { user } = useAuth();
@@ -9,7 +9,7 @@ const BookingHistory = () => {
     useEffect(() => {
         if (user) {
             const role = user.role === 'technician' ? 'technician' : 'customer';
-            fetch(`http://localhost:5000/api/bookings/user/${user.id}?role=${role}`)
+            fetch(`${API_URL}/api/bookings/user/${user.id}?role=${role}`)
                 .then(res => res.json())
                 .then(data => setBookings(data))
                 .catch(err => console.error(err));

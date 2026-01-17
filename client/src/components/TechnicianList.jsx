@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import socket from '../socket';
+import API_URL from '../config';
 
 const TechnicianList = ({ onBookingSuccess }) => {
     const [technicians, setTechnicians] = useState([]);
@@ -14,7 +15,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
     const [address, setAddress] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/technicians')
+        fetch(`${API_URL}/api/technicians`)
             .then(res => res.json())
             .then(data => {
                 setTechnicians(data);
@@ -51,7 +52,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
         };
 
         try {
-            const res = await fetch('http://localhost:5000/api/bookings', {
+            const res = await fetch(`${API_URL}/api/bookings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingData)

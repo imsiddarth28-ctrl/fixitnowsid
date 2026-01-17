@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
 const Wallet = () => {
     const { user } = useAuth();
@@ -10,7 +10,7 @@ const Wallet = () => {
     const handleAddMoney = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://localhost:5000/api/user/${user.id}/wallet/add`, {
+            const res = await fetch(`${API_URL}/api/user/${user.id}/wallet/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ amount: parseFloat(amount) })

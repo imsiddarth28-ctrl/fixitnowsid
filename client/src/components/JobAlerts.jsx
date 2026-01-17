@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import socket from '../socket';
 import { useAuth } from '../context/AuthContext';
 import LiveMap from './LiveMap';
+import API_URL from '../config';
 
 const JobAlerts = () => {
     const { user } = useAuth();
@@ -91,7 +92,7 @@ const JobAlerts = () => {
         const isTechnician = user?.role === 'technician';
 
         const updateStatus = (newStatus) => {
-            fetch(`http://localhost:5000/api/jobs/${activeJob._id}/status`, {
+            fetch(`${API_URL}/api/jobs/${activeJob._id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
