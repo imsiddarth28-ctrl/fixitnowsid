@@ -81,9 +81,7 @@ const CustomerDashboard = () => {
                 left: 0,
                 top: 0,
                 zIndex: 10,
-                background: 'var(--bg)',
-                transform: 'translateX(0)',
-                transition: 'transform 0.3s ease'
+                background: 'var(--bg)'
             }} className="customer-sidebar">
                 <div style={{
                     fontFamily: 'var(--font-heading)',
@@ -301,6 +299,7 @@ const CustomerDashboard = () => {
                     .customer-sidebar {
                         transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'} !important;
                         box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.5)' : 'none'};
+                        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     }
 
                     main {
