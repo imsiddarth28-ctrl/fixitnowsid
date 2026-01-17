@@ -13,12 +13,29 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import CustomerDashboard from './components/CustomerDashboard';
 import LandingPage from './components/LandingPage';
+import ActiveJobTracking from './components/ActiveJobTracking';
+import { subscribeToEvent } from './socket';
 
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeJob, setActiveJob] = useState(null);
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // Pusher listener for active jobs
+  useEffect(() => {
+    if (!user) return;
+
+    const handleJobUpdate = (data) => {
+      if (data.job.status === 'accepted' || data.job.status === 'arrived' || data.job.status === 'in_progress' || data.job.status === 'completed') {
+        setActiveJob(data.job);
+      }
+    };
+
+    const unsubscribe = subscribeToEvent(`user-${user.id}`, 'job_update', handleJobUpdate);
+    return () => unsubscribe();
+  }, [user]);
 
   // URL Routing Simulation
   useEffect(() => {
@@ -59,11 +76,40 @@ const MainApp = () => {
 
   // IF CUSTOMER: Render dedicated Dashboard Layout
   if (user?.role === 'customer' && !activeTab.startsWith('admin')) {
+    if (activeJob && (activeJob.status !== 'completed' || activeTab === 'home')) {
+      return (
+        <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+          <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
+          <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
+        </div>
+      );
+    }
     return (
       <>
         <CustomerDashboard />
-        <JobAlerts />
+        <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
       </>
+    );
+  }
+
+  // IF TECHNICIAN: Render dedicated Dashboard Layout
+  if (user?.role === 'technician' && !activeTab.startsWith('admin')) {
+    return (
+      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        {activeTab === 'home' ? (
+          activeJob ? (
+            <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
+          ) : (
+            <div style={{ display: 'flex' }}>
+              <TechnicianDashboard activeJob={activeJob} setActiveTab={setActiveTab} />
+              {/* Optional: Add a specific "Home" overlay content here if needed */}
+            </div>
+          )
+        ) : (
+          <TechnicianDashboard activeJob={activeJob} setActiveTab={setActiveTab} />
+        )}
+        <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
+      </div>
     );
   }
 
@@ -160,7 +206,14 @@ const MainApp = () => {
       )}
 
       {/* Main Content */}
-      <main className="container" style={{ marginTop: (!user || user.role !== 'customer') ? '8rem' : '2rem', paddingBottom: '4rem', textAlign: 'center' }}>
+      <main className="container" style={{
+        marginTop: (!user || user.role !== 'customer') ? '8rem' : '2rem',
+        paddingBottom: '4rem',
+        textAlign: 'center',
+        maxWidth: '1400px',
+        width: '100%',
+        margin: '0 auto'
+      }}>
 
         {/* PUBLIC HOME (Only when not logged in) */}
         {!user && activeTab === 'home' && (
@@ -183,12 +236,6 @@ const MainApp = () => {
               onSuccess={handlePaymentSuccess}
               onCancel={() => setActiveTab('home')}
             />
-          </div>
-        )}
-
-        {activeTab === 'dashboard' && user?.role === 'technician' && (
-          <div className="animate-fade-in">
-            <TechnicianDashboard />
           </div>
         )}
 
@@ -225,7 +272,7 @@ const MainApp = () => {
         />
       )}
 
-      <JobAlerts />
+      <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
     </div>
   )
 };

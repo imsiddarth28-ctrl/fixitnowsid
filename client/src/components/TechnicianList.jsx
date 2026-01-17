@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import socket from '../socket';
+
 import API_URL from '../config';
+import { motion } from 'framer-motion';
+import LiveMap from './LiveMap';
 
 const TechnicianList = ({ onBookingSuccess }) => {
     const [technicians, setTechnicians] = useState([]);
@@ -13,6 +15,10 @@ const TechnicianList = ({ onBookingSuccess }) => {
     // Booking Form State
     const [description, setDescription] = useState('');
     const [address, setAddress] = useState('');
+    const [pickedLocation, setPickedLocation] = useState({ x: 75, y: 65 });
+    const [isEmergency, setIsEmergency] = useState(false);
+    const [isBooking, setIsBooking] = useState(false);
+    const [bookingSuccess, setBookingSuccess] = useState(false);
 
     useEffect(() => {
         fetch(`${API_URL}/api/technicians`)
@@ -35,18 +41,24 @@ const TechnicianList = ({ onBookingSuccess }) => {
         setSelectedTech(tech);
     };
 
-    const confirmBooking = async (isEmergency = false) => {
+    const confirmBooking = async () => {
         if (!description || !address) {
             alert('Please fill in all details');
             return;
         }
 
+        setIsBooking(true);
+
         const bookingData = {
             technicianId: selectedTech._id,
-            customerId: user.id,
+            customerId: user.id || user._id,
             serviceType: selectedTech.serviceType,
             price: isEmergency ? 80 : 50,
-            location: { address, latitude: 0, longitude: 0 },
+            location: {
+                address,
+                latitude: pickedLocation.y,
+                longitude: pickedLocation.x
+            },
             description,
             isEmergency
         };
@@ -59,16 +71,24 @@ const TechnicianList = ({ onBookingSuccess }) => {
             });
             const data = await res.json();
             if (res.ok) {
-                alert('Booking Request Sent! Waiting for Technician response...');
-                setSelectedTech(null);
-                socket.emit('join', user.id);
-                if (onBookingSuccess) onBookingSuccess();
+                setBookingSuccess(true);
+                // Wait for animation
+                setTimeout(() => {
+                    setSelectedTech(null);
+                    setBookingSuccess(false);
+                    setDescription('');
+                    setAddress('');
+                    setIsEmergency(false);
+                    if (onBookingSuccess) onBookingSuccess();
+                }, 2000);
             } else {
-                alert('Booking failed: ' + data.error);
+                alert('Booking failed: ' + (data.error || data.message || 'Unknown error'));
             }
         } catch (err) {
-            console.error(err);
-            alert('Booking failed');
+            console.error('Booking Error:', err);
+            alert('Booking failed: Server unreachable');
+        } finally {
+            setIsBooking(false);
         }
     };
 
@@ -179,28 +199,40 @@ const TechnicianList = ({ onBookingSuccess }) => {
                     gap: '2rem'
                 }}>
                     {filteredTechs.map(tech => (
-                        <div
+                        <motion.div
                             key={tech._id}
+                            whileHover={{
+                                scale: 1.02,
+                                rotateY: 5,
+                                rotateX: -2,
+                                translateZ: 20
+                            }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                             style={{
                                 background: 'var(--card)',
                                 border: '1px solid var(--border)',
-                                borderRadius: '1rem',
-                                padding: '2rem',
+                                borderRadius: '1.5rem',
+                                padding: '2.5rem',
                                 position: 'relative',
-                                transition: 'all 0.3s ease',
-                                cursor: 'pointer'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-5px)';
-                                e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.1)';
-                                e.currentTarget.style.borderColor = 'var(--text-muted)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                                e.currentTarget.style.borderColor = 'var(--border)';
+                                cursor: 'pointer',
+                                transformStyle: 'preserve-3d',
+                                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)'
                             }}
                         >
+                            {/* Animated Glow Base */}
+                            <motion.div
+                                animate={{
+                                    opacity: tech.isBusy ? 0.2 : (tech.isAvailable ? [0.1, 0.3, 0.1] : 0),
+                                    scale: tech.isAvailable ? [1, 1.05, 1] : 1
+                                }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                                style={{
+                                    position: 'absolute', inset: -1, borderRadius: '1.5rem',
+                                    background: tech.isBusy ? 'linear-gradient(135deg, #f59e0b, #ef4444)' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                                    zIndex: -1, filter: 'blur(15px)'
+                                }}
+                            />
+
                             {/* Status Badge */}
                             <div style={{
                                 position: 'absolute',
@@ -208,88 +240,91 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 right: '1.5rem',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '0.5rem',
-                                background: tech.isAvailable ? 'rgba(16, 185, 129, 0.1)' : 'rgba(128, 128, 128, 0.1)',
-                                border: `1px solid ${tech.isAvailable ? 'var(--success)' : 'var(--text-muted)'}`,
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                color: tech.isAvailable ? 'var(--success)' : 'var(--text-muted)'
+                                gap: '0.6rem',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '2rem',
+                                background: tech.isBusy ? 'rgba(245, 158, 11, 0.1)' : (tech.isAvailable ? 'rgba(34, 197, 94, 0.1)' : 'rgba(128, 128, 128, 0.1)'),
+                                border: `1px solid ${tech.isBusy ? '#f59e0b' : (tech.isAvailable ? '#22c55e' : 'var(--border)')}`,
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                color: tech.isBusy ? '#f59e0b' : (tech.isAvailable ? '#22c55e' : 'var(--text-muted)'),
+                                letterSpacing: '0.05em'
                             }}>
-                                <div style={{
-                                    width: '6px',
-                                    height: '6px',
-                                    borderRadius: '50%',
-                                    background: tech.isAvailable ? 'var(--success)' : 'var(--text-muted)'
-                                }} />
-                                {tech.isAvailable ? 'AVAILABLE' : 'BUSY'}
+                                <motion.div
+                                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    style={{
+                                        width: '8px', height: '8px', borderRadius: '50%',
+                                        background: tech.isBusy ? '#f59e0b' : (tech.isAvailable ? '#22c55e' : '#666')
+                                    }}
+                                />
+                                {tech.isBusy ? 'IN MISSION' : (tech.isAvailable ? 'READY TO HELP' : 'BUSY NOW')}
                             </div>
 
-                            {/* Avatar */}
+                            {/* Avatar with 3D shadow */}
                             <div style={{
-                                width: '70px',
-                                height: '70px',
-                                borderRadius: '50%',
-                                background: '#eee',
-                                marginBottom: '1.5rem'
-                            }} />
+                                width: '80px', height: '80px', borderRadius: '2rem',
+                                background: 'linear-gradient(135deg, var(--bg) 0%, var(--border) 100%)',
+                                marginBottom: '2rem', border: '1px solid var(--border)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '2rem', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.1)',
+                                transform: 'translateZ(30px)'
+                            }}>
+                                {tech.name[0]}
+                            </div>
 
                             {/* Name & Rating */}
                             <h3 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: 700,
-                                marginBottom: '0.5rem',
-                                fontFamily: 'var(--font-heading)'
+                                fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem',
+                                letterSpacing: '-0.02em', transform: 'translateZ(40px)'
                             }}>
                                 {tech.name}
                             </h3>
 
                             <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                marginBottom: '1rem'
+                                display: 'flex', alignItems: 'center', gap: '0.8rem',
+                                marginBottom: '1.5rem', transform: 'translateZ(20px)'
                             }}>
-                                <span style={{ color: 'var(--warning)', fontWeight: 700 }}>⭐ {tech.rating}</span>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>({Math.floor(Math.random() * 100) + 20} reviews)</span>
+                                <span style={{ color: '#f59e0b', fontWeight: 800, fontSize: '1.1rem' }}>★ {tech.rating.toFixed(1)}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{tech.totalJobs} projects</span>
                             </div>
 
-                            {/* Service Type Badge */}
+                            {/* Service Type Label */}
                             <div style={{
-                                display: 'inline-block',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '0.5rem',
-                                background: 'var(--bg)',
-                                border: '1px solid var(--border)',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                marginBottom: '1.5rem'
+                                display: 'inline-flex', padding: '0.4rem 1rem', borderRadius: '0.5rem',
+                                background: 'var(--bg)', border: '1px solid var(--border)',
+                                fontSize: '0.85rem', fontWeight: 700, marginBottom: '2rem',
+                                color: 'var(--text-muted)', transform: 'translateZ(10px)'
                             }}>
-                                {tech.serviceType}
+                                {tech.serviceType.toUpperCase()}
                             </div>
 
-                            {/* Stats */}
-                            <div style={{
-                                display: 'flex',
-                                gap: '1.5rem',
-                                marginBottom: '1.5rem',
-                                fontSize: '0.9rem',
-                                color: 'var(--text-muted)'
-                            }}>
-                                <span>📍 2.5 km away</span>
-                                <span>⏱️ 15 min ETA</span>
-                            </div>
+                            {tech.isBusy && (
+                                <div style={{
+                                    fontSize: '0.75rem', color: '#f59e0b', fontWeight: 800,
+                                    marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                }}>
+                                    <Clock size={14} /> EST. WAIT: 25 MINS
+                                </div>
+                            )}
 
-                            {/* Book Button */}
-                            <button
-                                className="btn btn-primary"
-                                style={{ width: '100%', padding: '1rem' }}
+                            {/* Book Button with Micro-interaction */}
+                            <motion.button
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    width: '100%', padding: '1.2rem', borderRadius: '1rem',
+                                    border: 'none',
+                                    background: tech.isBusy ? '#ca8a04' : 'var(--text)',
+                                    color: tech.isBusy ? 'white' : 'var(--bg)',
+                                    fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
+                                    boxShadow: '0 10px 20px rgba(0,0,0,0.1)', transform: 'translateZ(50px)'
+                                }}
                                 onClick={() => handleBook(tech)}
                             >
-                                Book Now
-                            </button>
-                        </div>
+                                {tech.isBusy ? 'RESERVE NEXT' : 'BOOK MISSION'}
+                            </motion.button>
+                        </motion.div>
                     ))}
                 </div>
 
@@ -325,13 +360,64 @@ const TechnicianList = ({ onBookingSuccess }) => {
                     <div style={{
                         background: 'var(--bg)',
                         borderRadius: '1rem',
-                        maxWidth: '500px',
+                        maxWidth: '650px',
                         width: '100%',
                         padding: '3rem',
                         border: '1px solid var(--border)',
                         boxShadow: '0 40px 100px -20px rgba(0,0,0,0.3)',
                         position: 'relative'
                     }}>
+                        {/* Success Overlay */}
+                        {bookingSuccess && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'var(--bg)',
+                                    borderRadius: '1rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 100,
+                                    textAlign: 'center',
+                                    padding: '2rem'
+                                }}
+                            >
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: [0, 1.2, 1] }}
+                                    transition={{ duration: 0.5 }}
+                                    style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        borderRadius: '50%',
+                                        background: '#22c55e',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '2.5rem',
+                                        marginBottom: '1.5rem',
+                                        boxShadow: '0 10px 30px rgba(34, 197, 94, 0.4)'
+                                    }}
+                                >
+                                    ✓
+                                </motion.div>
+                                <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>MISSION INITIATED</h2>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Technician has been notified. Redirecting to tracking...</p>
+                                <div style={{ width: '100px', height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <motion.div
+                                        animate={{ x: [-100, 100] }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                                        style={{ width: '40px', height: '100%', background: 'var(--text)' }}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* Close Button */}
                         <button
                             onClick={() => setSelectedTech(null)}
@@ -344,7 +430,8 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 fontSize: '1.5rem',
                                 cursor: 'pointer',
                                 color: 'var(--text-muted)',
-                                padding: 0
+                                padding: 0,
+                                zIndex: 101
                             }}
                         >
                             ×
@@ -359,9 +446,29 @@ const TechnicianList = ({ onBookingSuccess }) => {
                         }}>
                             Book {selectedTech.name}
                         </h2>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                            {selectedTech.serviceType} · ⭐ {selectedTech.rating}
-                        </p>
+
+                        {selectedTech.isBusy ? (
+                            <div style={{
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                border: '1px solid rgba(245, 158, 11, 0.2)',
+                                padding: '1rem',
+                                borderRadius: '0.8rem',
+                                marginBottom: '1.5rem',
+                                color: '#ca8a04',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.8rem'
+                            }}>
+                                <Clock size={20} />
+                                <span>RESERVATION MODE: This pro is on a mission. Book now to be their next priority!</span>
+                            </div>
+                        ) : (
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                                {selectedTech.serviceType} · ⭐ {selectedTech.rating}
+                            </p>
+                        )}
 
                         {/* Form */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -396,33 +503,31 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 />
                             </div>
 
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '0.5rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600
-                                }}>
-                                    Service Address
-                                </label>
-                                <input
-                                    type="text"
-                                    value={address}
-                                    onChange={e => setAddress(e.target.value)}
-                                    placeholder="Enter your address"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        color: 'var(--text)'
-                                    }}
-                                    onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                                        Service Address
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={address}
+                                        onChange={e => setAddress(e.target.value)}
+                                        placeholder="Room/Building/Street"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.875rem 1rem',
+                                            borderRadius: '0.5rem',
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--card)',
+                                            fontSize: '0.95rem',
+                                            outline: 'none',
+                                            color: 'var(--text)'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ height: '160px', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                    <LiveMap mode="select" onLocationSelect={setPickedLocation} />
+                                </div>
                             </div>
 
                             {/* Emergency Checkbox */}
@@ -438,6 +543,8 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 <input
                                     type="checkbox"
                                     id="emergency"
+                                    checked={isEmergency}
+                                    onChange={(e) => setIsEmergency(e.target.checked)}
                                     style={{
                                         width: '20px',
                                         height: '20px',
@@ -459,14 +566,34 @@ const TechnicianList = ({ onBookingSuccess }) => {
 
                             <button
                                 className="btn btn-primary"
-                                style={{ width: '100%', padding: '1rem', fontSize: '1rem', marginTop: '0.5rem' }}
-                                onClick={() => {
-                                    const isEmergency = document.getElementById('emergency').checked;
-                                    confirmBooking(isEmergency);
+                                style={{
+                                    width: '100%',
+                                    padding: '1rem',
+                                    fontSize: '1rem',
+                                    marginTop: '0.5rem',
+                                    opacity: isBooking ? 0.7 : 1,
+                                    cursor: isBooking ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
                                 }}
+                                onClick={confirmBooking}
+                                disabled={isBooking}
                             >
-                                Confirm Booking
+                                {isBooking ? (
+                                    <>
+                                        <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                                        Processing...
+                                    </>
+                                ) : 'Confirm Booking'}
                             </button>
+
+                            <style>{`
+                                @keyframes spin {
+                                    to { transform: rotate(360deg); }
+                                }
+                            `}</style>
                         </div>
                     </div>
                 </div>

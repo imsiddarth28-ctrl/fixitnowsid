@@ -1,26 +1,36 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
+const Pusher = require('pusher');
 require('dotenv').config();
+const connectToDatabase = require('./lib/mongodb');
 
-// Initialize Express & HTTP Server
+// Initialize Express
 const app = express();
-const server = http.createServer(app);
 
-// Initialize Socket.IO with CORS
-// Railway/Render require 'server.listen' and support persistent WebSockets
-const io = new Server(server, {
-  cors: {
-    origin: "*", // Adjust this to your frontend URL for production security
-    methods: ["GET", "POST"]
-  }
+// Initialize Pusher
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID,
+  key: process.env.PUSHER_KEY,
+  secret: process.env.PUSHER_SECRET,
+  cluster: process.env.PUSHER_CLUSTER,
+  useTLS: true
 });
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Database Connection Middleware
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 // Models
 const User = require('./models/User');
@@ -28,86 +38,181 @@ const Technician = require('./models/Technician');
 const Job = require('./models/Job');
 const Payment = require('./models/Payment');
 const Complaint = require('./models/Complaint');
-
-// Database Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixitnow';
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
-
-// --- REAL-TIME ENGINE (Socket.IO) ---
-io.on('connection', (socket) => {
-  console.log('📡 User connected:', socket.id);
-
-  socket.on('join', (userId) => {
-    socket.join(userId);
-    console.log(`👤 User ${userId} joined room`);
-  });
-
-  socket.on('technician_response', async ({ jobId, status, customerId }) => {
-    try {
-      const job = await Job.findByIdAndUpdate(jobId, { status }, { new: true });
-      io.to(customerId).emit('job_update', { job });
-    } catch (err) {
-      console.error('Job response error:', err);
-    }
-  });
-
-  socket.on('update_location', ({ jobId, location }) => {
-    io.emit('technician_location_update', { jobId, location });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 User disconnected');
-  });
-});
+const Message = require('./models/Message');
 
 // Routes
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
-  res.send('FixItNow Real-Time Server Active 🚀');
+  res.send('FixItNow Vercel-Native Real-Time Server Active 🚀 (Pusher Powered)');
 });
 
-// API: Technician Discovery
-app.get('/api/technicians', async (req, res) => {
+app.get('/api', (req, res) => {
+  res.json({ status: 'ok', message: 'API is live', database: 'connected' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is healthy' });
+});
+
+// API: Send Message & Trigger Pusher
+app.post('/api/messages', async (req, res) => {
   try {
-    const techs = await Technician.find({ isAvailable: true, isVerified: true });
-    res.json(techs);
+    const { jobId, senderId, senderRole, text, receiverId } = req.body;
+    const newMessage = new Message({ jobId, senderId, senderRole, text });
+    await newMessage.save();
+
+    // Trigger Pusher event on the job channel
+    await pusher.trigger(`job-${jobId}`, 'receive_message', newMessage);
+
+    res.status(201).json(newMessage);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// API: Booking Engine with Socket Alerts
+// API: Chat History
+app.get('/api/chat/:jobId', async (req, res) => {
+  try {
+    const messages = await Message.find({ jobId: req.params.jobId }).sort({ timestamp: 1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Update Location & Trigger Pusher
+app.post('/api/jobs/:jobId/location', async (req, res) => {
+  try {
+    const { location } = req.body;
+    const { jobId } = req.params;
+
+    // In a real app, we might update the job/technician location in DB here
+    await pusher.trigger(`job-${jobId}`, 'technician_location_update', { jobId, location });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Technician Discovery
+app.get('/api/technicians', async (req, res) => {
+  try {
+    const techs = await Technician.find({ isVerified: true, isBlocked: false });
+    const techsWithStatus = await Promise.all(techs.map(async (tech) => {
+      const activeJob = await Job.findOne({
+        technicianId: tech._id,
+        status: { $in: ['accepted', 'on_way', 'in_progress'] }
+      });
+      const techObj = tech.toObject();
+      techObj.isBusy = !!activeJob;
+      techObj.currentJobId = activeJob ? activeJob._id : null;
+      return techObj;
+    }));
+    res.json(techsWithStatus);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Update Technician Availability
+app.put('/api/technicians/:id/availability', async (req, res) => {
+  try {
+    const { isAvailable } = req.body;
+    const tech = await Technician.findByIdAndUpdate(req.params.id, { isAvailable }, { new: true });
+    res.json(tech);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Get Technician Stats
+app.get('/api/technicians/:id/stats', async (req, res) => {
+  try {
+    const tech = await Technician.findById(req.params.id);
+    if (!tech) return res.status(404).json({ error: 'Technician not found' });
+    const recentJobs = await Job.find({ technicianId: req.params.id })
+      .populate('customerId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(5);
+    res.json({
+      earnings: tech.earnings,
+      totalJobs: tech.totalJobs,
+      rating: tech.rating,
+      recentJobs
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Booking Engine with Pusher Alerts
 app.post('/api/bookings', async (req, res) => {
   try {
     const { technicianId, customerId, serviceType, location, price, description, isEmergency } = req.body;
 
-    const newJob = new Job({
-      technicianId,
+    console.log('[BOOKING REQUEST]', { technicianId, customerId, serviceType });
+
+    if (!technicianId || !customerId) {
+      return res.status(400).json({ error: 'Missing technicianId or customerId' });
+    }
+
+    // 1. Check if user and technician exist
+    const [customer, tech] = await Promise.all([
+      User.findById(customerId),
+      Technician.findById(technicianId)
+    ]);
+
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!tech) return res.status(404).json({ error: 'Technician not found' });
+
+    // 2. IDEMPOTENCY: Check if there's already a PENDING booking from this customer for this tech
+    const existingPending = await Job.findOne({
       customerId,
-      serviceType,
-      location,
-      price,
-      description,
-      isEmergency,
+      technicianId,
       status: 'pending'
     });
+
+    if (existingPending) {
+      return res.status(409).json({
+        error: 'Duplicate Request',
+        message: 'You already have a pending booking request with this technician.'
+      });
+    }
+
+    // 3. Check if tech is currently busy with another mission
+    const activeMission = await Job.findOne({
+      technicianId,
+      status: { $in: ['accepted', 'on_way', 'in_progress'] }
+    });
+
+    const newJob = new Job({
+      technicianId, customerId, serviceType, location, price, description, isEmergency, status: 'pending'
+    });
+
+    if (activeMission) newJob.isQueued = true;
+
     await newJob.save();
 
-    const customer = await User.findById(customerId);
-
-    // INSTANT ALERT TO TECH
-    io.to(technicianId).emit('new_job_request', {
-      job: newJob,
-      customerName: customer ? customer.name : 'A Customer'
-    });
+    // 4. Notify technician via Pusher
+    try {
+      await pusher.trigger(`user-${technicianId}`, 'new_job_request', {
+        job: newJob,
+        isQueued: !!activeMission,
+        customerName: customer.name || 'A Customer'
+      });
+      console.log('[BOOKING SUCCESS] Pusher notified technician');
+    } catch (pusherErr) {
+      console.error('[PUSHER ERROR]', pusherErr);
+      // We still return 201 because the job is saved in DB
+    }
 
     res.status(201).json(newJob);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[BOOKING 500 ERROR]', err);
+    res.status(500).json({ error: 'Server Error', message: err.message });
   }
 });
 
@@ -127,15 +232,41 @@ app.get('/api/bookings/user/:userId', async (req, res) => {
   }
 });
 
-// API: Update Status & Notify
+// API: Update Status & Notify via Pusher
 app.put('/api/jobs/:jobId/status', async (req, res) => {
   try {
     const { status } = req.body;
-    const job = await Job.findByIdAndUpdate(req.params.jobId, { status }, { new: true });
+    const updateData = { status };
+    if (status === 'completed') updateData.completedAt = new Date();
 
-    // Notify Customer instantly
-    io.to(job.customerId.toString()).emit('job_update', { job });
+    const job = await Job.findByIdAndUpdate(req.params.jobId, updateData, { new: true });
+    if (status === 'completed' && job.technicianId) {
+      await Technician.findByIdAndUpdate(job.technicianId, {
+        $inc: { totalJobs: 1, earnings: job.price || 0 }
+      });
+    }
 
+    // Notify Customer via Pusher
+    if (job.customerId) {
+      await pusher.trigger(`user-${job.customerId}`, 'job_update', { job });
+    }
+
+    res.json(job);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Rate Job
+app.put('/api/jobs/:jobId/rate', async (req, res) => {
+  try {
+    const { rating, review } = req.body;
+    const job = await Job.findByIdAndUpdate(req.params.jobId, { rating, review }, { new: true });
+    if (job.technicianId) {
+      const allRatedJobs = await Job.find({ technicianId: job.technicianId, rating: { $exists: true } });
+      const avgRating = allRatedJobs.reduce((acc, current) => acc + current.rating, 0) / allRatedJobs.length;
+      await Technician.findByIdAndUpdate(job.technicianId, { rating: avgRating.toFixed(2) });
+    }
     res.json(job);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -147,6 +278,26 @@ app.get('/api/admin/technicians', async (req, res) => {
   try {
     const techs = await Technician.find({}).sort({ joinedAt: -1 });
     res.json(techs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Admin Tech Control
+app.put('/api/admin/approve-technician/:id', async (req, res) => {
+  try {
+    const tech = await Technician.findByIdAndUpdate(req.params.id, { isVerified: true }, { new: true });
+    res.json(tech);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/block-technician/:id', async (req, res) => {
+  try {
+    const { isBlocked } = req.body;
+    const tech = await Technician.findByIdAndUpdate(req.params.id, { isBlocked }, { new: true });
+    res.json(tech);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -164,10 +315,10 @@ app.get('/api/admin/bookings', async (req, res) => {
   }
 });
 
-// Start Server (Essential for Railway/Render/Heroku)
+// Start Server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Real-time engine live on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Real-time logic (Pusher triggered) live on port ${PORT}`);
 });
 
-module.exports = app; // For local testing utility
+module.exports = app;

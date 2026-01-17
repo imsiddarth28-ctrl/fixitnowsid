@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TechnicianList from './TechnicianList';
 import Wallet from './Wallet';
@@ -126,31 +127,52 @@ const CustomerDashboard = () => {
                 <header style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-end',
-                    marginBottom: '3rem'
+                    alignItems: 'flex-start',
+                    marginBottom: '3.5rem',
+                    gap: '2rem'
                 }}>
-                    <div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                            Dashboard / {menuItems.find(m => m.id === view)?.label}
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+                            DASHBOARD // {menuItems.find(m => m.id === view)?.label?.toUpperCase()}
                         </div>
                         <h1 style={{
-                            fontSize: '2rem',
-                            fontWeight: 800,
+                            fontSize: '2.5rem',
+                            fontWeight: 900,
                             fontFamily: 'var(--font-heading)',
-                            margin: 0
+                            margin: 0,
+                            letterSpacing: '-0.03em'
                         }}>
-                            Welcome back, {user?.name?.split(' ')[0]}
+                            Welcome, <span className="text-gradient">{user?.name?.split(' ')[0].toUpperCase()}</span>
                         </h1>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2rem' }}>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>WALLET BALANCE</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>${user?.walletBalance || '0.00'}</div>
+                    {/* Smart Insights Panel */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '1.5rem',
+                        background: 'rgba(255,255,255,0.02)',
+                        padding: '1.2rem 2rem',
+                        borderRadius: '1.2rem',
+                        border: '1px solid var(--border)',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1.5rem' }}>
+                            <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 900, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>HOME HEALTH INDEX</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'monospace' }}>94%</div>
+                                <div style={{ width: '40px', height: '4px', background: '#22c55e30', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: '94%' }}
+                                        style={{ height: '100%', background: '#22c55e' }}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>PENDING JOBS</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>0</div>
+                        <div style={{ paddingLeft: '0.5rem' }}>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>AI PREDICTION</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>AC SERVICE DUE IN 12 DAYS</div>
+                            <div style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 800 }}>⚡ OPTIMIZATION AVAILABLE</div>
                         </div>
                     </div>
                 </header>

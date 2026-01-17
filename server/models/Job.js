@@ -16,9 +16,10 @@ const jobSchema = new mongoose.Schema({
     },
     price: { type: Number },
     description: String,
-    scheduledTime: { type: Date, default: Date.now },
+    scheduledTime: Date,
     completedAt: Date,
     isEmergency: { type: Boolean, default: false },
+    isQueued: { type: Boolean, default: false },
     rating: Number,
     review: String
 }, { timestamps: true });

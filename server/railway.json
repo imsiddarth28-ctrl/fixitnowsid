@@ -1,0 +1,12 @@
+[
+    {
+        "name": "MONGODB_URI",
+        "description": "MongoDB Atlas connection string",
+        "required": true
+    },
+    {
+        "name": "JWT_SECRET",
+        "description": "Secret key for JWT signing",
+        "required": true
+    }
+]

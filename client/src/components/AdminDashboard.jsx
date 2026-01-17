@@ -36,10 +36,35 @@ const AdminDashboard = () => {
 
     const approveTech = async (id) => {
         try {
-            await fetch(`${API_URL}/api/admin/approve-technician/${id}`, { method: 'PUT' });
-            fetchTechnicians();
-            alert('Technician verified successfully');
+            const res = await fetch(`${API_URL}/api/admin/approve-technician/${id}`, { method: 'PUT' });
+            if (res.ok) {
+                fetchTechnicians();
+                alert('Technician verified successfully');
+            }
         } catch (err) { console.error(err); }
+    };
+
+    const toggleBlockTech = async (id, currentStatus) => {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/block-technician/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isBlocked: !currentStatus })
+            });
+            if (res.ok) {
+                fetchTechnicians();
+                alert(`Technician ${!currentStatus ? 'blocked' : 'unblocked'} successfully`);
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const stats = {
+        totalEarnings: bookings.filter(b => b.status === 'completed').reduce((acc, curr) => acc + (curr.price || 0), 0),
+        activeTechs: technicians.filter(t => t.isAvailable && !t.isBlocked).length,
+        pendingBookings: bookings.filter(b => b.status === 'pending').length,
+        avgRating: technicians.length > 0
+            ? (technicians.reduce((acc, curr) => acc + curr.rating, 0) / technicians.length).toFixed(1)
+            : 5.0
     };
 
     const menuItems = [
@@ -55,7 +80,8 @@ const AdminDashboard = () => {
             background: 'var(--bg)',
             display: 'flex',
             width: '100%',
-            position: 'relative'
+            position: 'relative',
+            textAlign: 'left'
         }}>
             {/* Sidebar */}
             <aside style={{
@@ -153,12 +179,12 @@ const AdminDashboard = () => {
 
                     <div style={{ display: 'flex', gap: '2rem' }}>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>ACTIVE USERS</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>2,840</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>TOTAL VOLUME</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>${stats.totalEarnings.toFixed(2)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>AVG RATING</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>4.92</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stats.avgRating}</div>
                         </div>
                     </div>
                 </header>
@@ -175,35 +201,40 @@ const AdminDashboard = () => {
                                     borderRadius: '0.75rem',
                                     display: 'flex',
                                     justifyContent: 'space-between',
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    opacity: tech.isBlocked ? 0.6 : 1
                                 }}>
                                     <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
                                             {tech.name[0]}
                                         </div>
                                         <div>
-                                            <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem' }}>{tech.name}</h4>
+                                            <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem' }}>{tech.name} {tech.isBlocked && <span style={{ color: 'var(--error)', fontSize: '0.7rem' }}>(BLOCKED)</span>}</h4>
                                             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                 <span>{tech.serviceType}</span>
                                                 <span>•</span>
                                                 <span>{tech.email}</span>
+                                                <span>•</span>
+                                                <span>{tech.rating}⭐</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        {tech.isVerified ? (
-                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg)', padding: '0.4rem 1rem', borderRadius: '2rem', border: '1px solid var(--border)' }}>
-                                                VERIFIED
-                                            </span>
-                                        ) : (
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        {!tech.isVerified && (
                                             <button
-                                                className="btn btn-primary"
+                                                className="btn-approve"
                                                 onClick={() => approveTech(tech._id)}
-                                                style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem' }}
+                                                style={{ padding: '0.5rem 1.2rem', fontSize: '0.8rem', background: 'var(--text)', color: 'var(--bg)', border: 'none', borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer' }}
                                             >
-                                                Approve Account
+                                                Approve
                                             </button>
                                         )}
+                                        <button
+                                            onClick={() => toggleBlockTech(tech._id, tech.isBlocked)}
+                                            style={{ padding: '0.5rem 1.2rem', fontSize: '0.8rem', background: 'transparent', color: tech.isBlocked ? 'var(--text)' : 'var(--error)', border: `1px solid ${tech.isBlocked ? 'var(--border)' : 'var(--error)'}`, borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                            {tech.isBlocked ? 'Unblock' : 'Block'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -219,7 +250,7 @@ const AdminDashboard = () => {
                                         <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>SERVICE</th>
                                         <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>PARTIES</th>
                                         <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>STATUS</th>
-                                        <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>ACTION</th>
+                                        <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>PRICE</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -244,13 +275,19 @@ const AdminDashboard = () => {
                                                     {job.status}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '1rem 1.5rem' }}>
-                                                <button style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>View Details</button>
+                                            <td style={{ padding: '1rem 1.5rem', fontWeight: 700 }}>
+                                                ${job.price || 0}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {(view === 'analytics' || view === 'support') && (
+                        <div style={{ textAlign: 'center', padding: '5rem', border: '1px dashed var(--border)', borderRadius: '1rem' }}>
+                            <h3 style={{ color: 'var(--text-muted)' }}>Statistical insights are being compiled.</h3>
                         </div>
                     )}
                 </div>
