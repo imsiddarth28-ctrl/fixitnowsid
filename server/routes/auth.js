@@ -34,11 +34,17 @@ router.post('/register/technician', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const tech = new Technician({
-            name, email, password: hashedPassword, phone, serviceType
+            name,
+            email,
+            password: hashedPassword,
+            phone,
+            serviceType,
+            isAvailable: true,  // Make live immediately
+            isVerified: true    // Auto-verify for demo/ease of use
         });
         await tech.save();
 
-        res.status(201).json({ message: 'Technician registered. Waiting for approval.' });
+        res.status(201).json({ message: 'Technician registered successfully and is now active.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

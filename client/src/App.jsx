@@ -60,10 +60,10 @@ const MainApp = () => {
   // IF CUSTOMER: Render dedicated Dashboard Layout
   if (user?.role === 'customer' && !activeTab.startsWith('admin')) {
     return (
-      <div className="container" style={{ marginTop: '2rem' }}>
+      <>
         <CustomerDashboard />
         <JobAlerts />
-      </div>
+      </>
     );
   }
 

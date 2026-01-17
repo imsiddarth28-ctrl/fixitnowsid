@@ -62,6 +62,7 @@ const JobAlerts = () => {
                 boxShadow: '0 0 20px rgba(0,0,0,0.5)', zIndex: 2000, maxWidth: '350px'
             }} className="animate-fade-in">
                 <h3 className="text-gradient" style={{ marginBottom: '0.5rem' }}>New Job Request!</h3>
+                <p style={{ marginBottom: '0.3rem', fontSize: '1.1rem', fontWeight: 700 }}>{incomingJob.customerName}</p>
                 <p style={{ marginBottom: '0.5rem' }}><strong>Service:</strong> {incomingJob.job.serviceType}</p>
                 <p style={{ marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{incomingJob.job.description}</p>
                 <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>📍 {incomingJob.job.location.address}</p>

@@ -40,9 +40,15 @@ const AuthModal = ({ onClose, onSuccess }) => {
 
             if (res.success) {
                 if (!isLogin) {
-                    // If register success, automatically login or ask to login
-                    alert('Registration successful! Please login.');
-                    setIsLogin(true);
+                    // Auto-login after registration
+                    const loginRes = await login(formData.email, formData.password, formData.role);
+                    if (loginRes.success) {
+                        if (onSuccess) onSuccess(formData.role);
+                        onClose();
+                    } else {
+                        setError('Account created, but auto-login failed. Please sign in manually.');
+                        setIsLogin(true);
+                    }
                 } else {
                     if (onSuccess) onSuccess(formData.role);
                     onClose();

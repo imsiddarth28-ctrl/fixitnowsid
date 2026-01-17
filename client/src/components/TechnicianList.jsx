@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import socket from '../socket';
 
-const TechnicianList = () => {
+const TechnicianList = ({ onBookingSuccess }) => {
     const [technicians, setTechnicians] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTech, setSelectedTech] = useState(null);
@@ -61,6 +61,7 @@ const TechnicianList = () => {
                 alert('Booking Request Sent! Waiting for Technician response...');
                 setSelectedTech(null);
                 socket.emit('join', user.id);
+                if (onBookingSuccess) onBookingSuccess();
             } else {
                 alert('Booking failed: ' + data.error);
             }
@@ -74,7 +75,7 @@ const TechnicianList = () => {
         ? technicians
         : technicians.filter(t => t.serviceType.toLowerCase() === filter.toLowerCase());
 
-    const categories = ['All', 'Plumber', 'Electrician', 'Cleaning', 'Carpenter', 'HVAC'];
+    const categories = ['All', 'Plumber', 'Electrician', 'Cleaning', 'Carpenter', 'HVAC', 'Windows'];
 
     if (loading) {
         return (

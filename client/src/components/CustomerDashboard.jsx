@@ -159,7 +159,7 @@ const CustomerDashboard = () => {
                 <div style={{ width: '100%' }}>
                     {view === 'services' && (
                         <div className="animate-fade-in">
-                            <TechnicianList />
+                            <TechnicianList onBookingSuccess={() => setView('history')} />
                         </div>
                     )}
 

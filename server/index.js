@@ -102,9 +102,11 @@ app.post('/api/bookings', async (req, res) => {
     await newJob.save();
 
     // Notify specific technician
+    const user = await mongoose.model('User').findById(customerId);
+
     io.to(technicianId).emit('new_job_request', {
       job: newJob,
-      customerName: 'Customer' // In real app, fetch name
+      customerName: user ? user.name : 'Unknown Customer'
     });
 
     res.status(201).json(newJob);
