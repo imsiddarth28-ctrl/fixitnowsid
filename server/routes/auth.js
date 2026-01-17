@@ -1,0 +1,81 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Technician = require('../models/Technician');
+
+// SECRET
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_fixitnow';
+
+// REGISTER USER
+router.post('/register/user', async (req, res) => {
+    try {
+        const { name, email, password, phone } = req.body;
+        let existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: 'User already exists' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ name, email, password: hashedPassword, phone });
+        await user.save();
+
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// REGISTER TECHNICIAN
+router.post('/register/technician', async (req, res) => {
+    try {
+        const { name, email, password, phone, serviceType } = req.body;
+        let existingTech = await Technician.findOne({ email });
+        if (existingTech) return res.status(400).json({ message: 'Technician already exists' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const tech = new Technician({
+            name, email, password: hashedPassword, phone, serviceType
+        });
+        await tech.save();
+
+        res.status(201).json({ message: 'Technician registered. Waiting for approval.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// LOGIN (Generic)
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password, role } = req.body; // role: 'user' or 'technician'
+
+        let user;
+        if (role === 'technician') {
+            user = await Technician.findOne({ email });
+        } else {
+            // Check User collection for both 'customer' and 'admin'
+            user = await User.findOne({ email });
+        }
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // If user is trying to login as admin, verify database role is admin
+        if (role === 'admin' && user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized access' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+        // Ensure we send back the correct role
+        const finalRole = role === 'technician' ? 'technician' : user.role;
+
+        const token = jwt.sign({ id: user._id, role: finalRole }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ token, user: { id: user._id, name: user.name, role: finalRole } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+module.exports = router;
