@@ -53,6 +53,22 @@ const CustomerDashboard = () => {
                 {mobileMenuOpen ? '✕' : '☰'}
             </button>
 
+            {/* Mobile Backdrop Overlay */}
+            {mobileMenuOpen && (
+                <div
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{
+                        display: 'none',
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        zIndex: 9,
+                        backdropFilter: 'blur(2px)'
+                    }}
+                    className="mobile-backdrop"
+                />
+            )}
+
             {/* Sidebar */}
             <aside style={{
                 width: '280px',
@@ -263,9 +279,13 @@ const CustomerDashboard = () => {
                         display: block !important;
                     }
 
+                    .mobile-backdrop {
+                        display: block !important;
+                    }
+
                     .customer-sidebar {
                         transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'} !important;
-                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.3)' : 'none'};
+                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.5)' : 'none'};
                     }
 
                     main {
@@ -277,6 +297,14 @@ const CustomerDashboard = () => {
                 @media (min-width: 769px) {
                     .customer-sidebar {
                         transform: translateX(0) !important;
+                    }
+                    
+                    .mobile-menu-toggle {
+                        display: none !important;
+                    }
+
+                    .mobile-backdrop {
+                        display: none !important;
                     }
                 }
             `}</style>
