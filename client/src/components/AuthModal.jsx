@@ -11,6 +11,8 @@ const AuthModal = ({ onClose, onSuccess }) => {
         email: '',
         password: '',
         name: '',
+        phone: '',
+        serviceType: 'Plumber',
         role: 'customer'
     });
 
@@ -25,7 +27,13 @@ const AuthModal = ({ onClose, onSuccess }) => {
                 res = await login(formData.email, formData.password, formData.role);
             } else {
                 res = await register(
-                    { name: formData.name, email: formData.email, password: formData.password },
+                    {
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password,
+                        phone: formData.phone,
+                        serviceType: formData.serviceType
+                    },
                     formData.role
                 );
             }
@@ -182,37 +190,107 @@ const AuthModal = ({ onClose, onSuccess }) => {
                     </div>
 
                     {!isLogin && (
-                        <div>
-                            <label style={{
-                                display: 'block',
-                                marginBottom: '0.5rem',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                color: 'var(--text)'
-                            }}>
-                                Full Name
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="Enter your name"
-                                style={{
-                                    width: '100%',
-                                    padding: '0.875rem 1rem',
-                                    borderRadius: '0.5rem',
-                                    border: '1px solid var(--border)',
-                                    background: 'var(--card)',
-                                    fontSize: '0.95rem',
-                                    outline: 'none',
-                                    transition: 'all 0.2s ease',
+                        <>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.5rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
                                     color: 'var(--text)'
-                                }}
-                                onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                            />
-                        </div>
+                                }}>
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    placeholder="Enter your name"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--card)',
+                                        fontSize: '0.95rem',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        color: 'var(--text)'
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
+                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.5rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: 'var(--text)'
+                                }}>
+                                    Phone Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    placeholder="Enter your phone number"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--card)',
+                                        fontSize: '0.95rem',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        color: 'var(--text)'
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
+                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                                />
+                            </div>
+
+                            {formData.role === 'technician' && (
+                                <div>
+                                    <label style={{
+                                        display: 'block',
+                                        marginBottom: '0.5rem',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 600,
+                                        color: 'var(--text)'
+                                    }}>
+                                        Service Specialization
+                                    </label>
+                                    <select
+                                        name="serviceType"
+                                        value={formData.serviceType}
+                                        onChange={handleChange}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.875rem 1rem',
+                                            borderRadius: '0.5rem',
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--card)',
+                                            fontSize: '0.95rem',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            color: 'var(--text)'
+                                        }}
+                                    >
+                                        {['Plumber', 'Electrician', 'Cleaning', 'Carpenter', 'HVAC', 'Windows'].map(type => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div>

@@ -50,7 +50,11 @@ const MainApp = () => {
 
   const handleLoginSuccess = (role) => {
     setShowAuthModal(false);
-    setActiveTab('home');
+    if (role === 'technician') {
+      setActiveTab('dashboard');
+    } else {
+      setActiveTab('home');
+    }
   };
 
   // IF CUSTOMER: Render dedicated Dashboard Layout
