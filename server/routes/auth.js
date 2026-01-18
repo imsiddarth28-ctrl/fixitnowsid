@@ -92,12 +92,26 @@ router.post('/login', async (req, res) => {
         let user;
         if (role === 'technician') {
             user = await Technician.findOne({ email });
+            // If not found as technician, check if they are a user to give a better error
+            if (!user) {
+                const existingUser = await User.findOne({ email });
+                if (existingUser) {
+                    return res.status(400).json({ message: 'This email is registered as a Customer. Please switch to Customer login.' });
+                }
+            }
         } else {
             // Check User collection for both 'customer' and 'admin'
             user = await User.findOne({ email });
+            // If not found as user, check if they are a technician
+            if (!user) {
+                const existingTech = await Technician.findOne({ email });
+                if (existingTech) {
+                    return res.status(400).json({ message: 'This email is registered as a Technician. Please switch to Technician login.' });
+                }
+            }
         }
 
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ message: 'Account not found. Please register first.' });
 
         // If user is trying to login as admin, verify database role is admin
         if (role === 'admin' && user.role !== 'admin') {
