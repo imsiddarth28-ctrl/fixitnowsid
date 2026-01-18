@@ -411,6 +411,10 @@ const AuthModal = ({ onClose, onSuccess }) => {
                         {isLogin ? 'Sign Up' : 'Sign In'}
                     </button>
                 </div>
+
+                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                    <a href="/admin" onClick={onClose} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.7 }}>Admin Access</a>
+                </div>
             </div>
         </div>
     );
