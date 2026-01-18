@@ -5,7 +5,7 @@ import API_URL from '../config';
 import Chat from './Chat';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const JobAlerts = ({ activeJob, setActiveJob }) => {
+const JobAlerts = ({ activeJob, setActiveJob, setActiveTab }) => {
     const { user } = useAuth();
     const [incomingJob, setIncomingJob] = useState(null);
     const [showChat, setShowChat] = useState(false);
@@ -34,9 +34,13 @@ const JobAlerts = ({ activeJob, setActiveJob }) => {
 
     const handleResponse = async (status) => {
         if (!incomingJob) return;
+        const targetJob = incomingJob.job;
+
+        // Optimistic UI: Clear alert immediately
+        setIncomingJob(null);
 
         try {
-            const res = await fetch(`${API_URL}/api/jobs/${incomingJob.job._id}/status`, {
+            const res = await fetch(`${API_URL}/api/jobs/${targetJob._id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
@@ -46,13 +50,16 @@ const JobAlerts = ({ activeJob, setActiveJob }) => {
                 const updatedJob = await res.json();
                 if (status === 'accepted') {
                     setActiveJob(updatedJob);
+                    if (setActiveTab) setActiveTab('home');
                 }
+            } else {
+                const errorData = await res.json();
+                alert(`Action failed: ${errorData.message || 'Server error'}`);
             }
         } catch (err) {
             console.error('Response error:', err);
+            alert('Connection failed. Please check your internet.');
         }
-
-        setIncomingJob(null);
     };
 
     return (
@@ -168,6 +175,8 @@ const JobAlerts = ({ activeJob, setActiveJob }) => {
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             {activeJob.status === 'accepted' && (
                                                 <button onClick={() => {
+                                                    const newJob = { ...activeJob, status: 'arrived' };
+                                                    setActiveJob(newJob);
                                                     fetch(`${API_URL}/api/jobs/${activeJob._id}/status`, {
                                                         method: 'PUT',
                                                         headers: { 'Content-Type': 'application/json' },
@@ -177,6 +186,8 @@ const JobAlerts = ({ activeJob, setActiveJob }) => {
                                             )}
                                             {activeJob.status === 'arrived' && (
                                                 <button onClick={() => {
+                                                    const newJob = { ...activeJob, status: 'in_progress' };
+                                                    setActiveJob(newJob);
                                                     fetch(`${API_URL}/api/jobs/${activeJob._id}/status`, {
                                                         method: 'PUT',
                                                         headers: { 'Content-Type': 'application/json' },
@@ -186,6 +197,8 @@ const JobAlerts = ({ activeJob, setActiveJob }) => {
                                             )}
                                             {activeJob.status === 'in_progress' && (
                                                 <button onClick={() => {
+                                                    const newJob = { ...activeJob, status: 'completed' };
+                                                    setActiveJob(newJob);
                                                     fetch(`${API_URL}/api/jobs/${activeJob._id}/status`, {
                                                         method: 'PUT',
                                                         headers: { 'Content-Type': 'application/json' },

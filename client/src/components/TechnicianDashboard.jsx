@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BookingHistory from './BookingHistory';
 import { Menu, X } from 'lucide-react';
 
-const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
+const TechnicianDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
     const { user, logout } = useAuth();
     const [stats, setStats] = useState({ earnings: 0, totalJobs: 0, rating: 5.0 });
     const [recentJobs, setRecentJobs] = useState([]);
@@ -659,7 +659,10 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
                                             {mission.status.toUpperCase()}
                                         </div>
                                         <button
-                                            onClick={() => setActiveTab('home')}
+                                            onClick={() => {
+                                                setActiveJob(mission);
+                                                setActiveTab('home');
+                                            }}
                                             style={{
                                                 padding: '0.9rem 1.5rem', borderRadius: '0.5rem', background: 'var(--text)',
                                                 color: 'var(--bg)', border: 'none', fontWeight: 900, cursor: 'pointer',

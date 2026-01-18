@@ -30,19 +30,32 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate }) => {
     const isReached = ['arrived', 'in_progress', 'completed'].includes(job.status);
 
     const updateStatus = async (newStatus) => {
+        // Optimistic UI Update
+        const originalJob = { ...job };
+        onStatusUpdate({ ...job, status: newStatus });
+
+        if (newStatus === 'completed') {
+            setShowReceipt(true);
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/jobs/${job._id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
             });
+
+            if (!res.ok) {
+                throw new Error('Server update failed');
+            }
+
             const updatedJob = await res.json();
             onStatusUpdate(updatedJob);
-            if (newStatus === 'completed') {
-                setShowReceipt(true);
-            }
         } catch (err) {
             console.error('Error updating status:', err);
+            // Rollback on error
+            onStatusUpdate(originalJob);
+            alert('Mission update failed. Radar signal lost.');
         }
     };
 
@@ -277,7 +290,10 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate }) => {
                                         </div>
                                         {user.role === 'technician' && (
                                             <button
-                                                onClick={() => onStatusUpdate(null)}
+                                                onClick={() => {
+                                                    // Instant return to hub
+                                                    onStatusUpdate(null);
+                                                }}
                                                 style={{
                                                     padding: '0.6rem 1.2rem', borderRadius: '0.5rem',
                                                     background: 'var(--text)', color: 'var(--bg)',

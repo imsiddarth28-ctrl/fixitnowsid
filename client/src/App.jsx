@@ -15,6 +15,7 @@ import CustomerDashboard from './components/CustomerDashboard';
 import LandingPage from './components/LandingPage';
 import ActiveJobTracking from './components/ActiveJobTracking';
 import { subscribeToEvent } from './socket';
+import API_URL from './config';
 
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -106,7 +107,7 @@ const MainApp = () => {
     }
     return (
       <>
-        <CustomerDashboard />
+        <CustomerDashboard activeJob={activeJob} setActiveJob={setActiveJob} />
         <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
       </>
     );
@@ -121,12 +122,11 @@ const MainApp = () => {
             <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
           ) : (
             <div style={{ display: 'flex' }}>
-              <TechnicianDashboard activeJob={activeJob} setActiveTab={setActiveTab} />
-              {/* Optional: Add a specific "Home" overlay content here if needed */}
+              <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
             </div>
           )
         ) : (
-          <TechnicianDashboard activeJob={activeJob} setActiveTab={setActiveTab} />
+          <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
         )}
         <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
       </div>
@@ -285,7 +285,7 @@ const MainApp = () => {
         />
       )}
 
-      <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
+      <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
     </div>
   )
 };
