@@ -40,14 +40,22 @@ const AuthModal = ({ onClose, onSuccess }) => {
 
             if (res.success) {
                 if (!isLogin) {
-                    // Auto-login after registration
-                    const loginRes = await login(formData.email, formData.password, formData.role);
-                    if (loginRes.success) {
-                        if (onSuccess) onSuccess(formData.role);
-                        onClose();
-                    } else {
-                        setError('Account created, but auto-login failed. Please sign in manually.');
+                    // Technicians require approval, so don't auto-login
+                    if (formData.role === 'technician') {
                         setIsLogin(true);
+                        setError('Registration successful! Your account is pending Admin approval. You will be able to login once verified.');
+                        // Use a success color/style generally, but here using error field for visibility temporarily or I should have a separate successMsg state.
+                        // Ideally, I should just switch to login view and show the message.
+                    } else {
+                        // Auto-login for customers
+                        const loginRes = await login(formData.email, formData.password, formData.role);
+                        if (loginRes.success) {
+                            if (onSuccess) onSuccess(formData.role);
+                            onClose();
+                        } else {
+                            setError('Account created, but auto-login failed. Please sign in manually.');
+                            setIsLogin(true);
+                        }
                     }
                 } else {
                     if (onSuccess) onSuccess(formData.role);

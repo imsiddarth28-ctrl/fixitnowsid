@@ -73,12 +73,12 @@ router.post('/register/technician', async (req, res) => {
             password: hashedPassword,
             phone,
             serviceType,
-            isAvailable: true,  // Make live immediately
-            isVerified: true    // Auto-verify for demo/ease of use
+            isAvailable: true,
+            isVerified: false   // Requires Admin Approval
         });
         await tech.save();
 
-        res.status(201).json({ message: 'Technician registered successfully and is now active.' });
+        res.status(201).json({ message: 'Registration successful! Please wait for Admin approval to login.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -97,6 +97,14 @@ router.post('/login', async (req, res) => {
                 const existingUser = await User.findOne({ email });
                 if (existingUser) {
                     return res.status(400).json({ message: 'This email is registered as a Customer. Please switch to Customer login.' });
+                }
+            } else {
+                // Check verification and block status
+                if (!user.isVerified) {
+                    return res.status(403).json({ message: 'Your account is pending Admin approval. Please wait for verification.' });
+                }
+                if (user.isBlocked) {
+                    return res.status(403).json({ message: 'Your account has been suspended. Contact support.' });
                 }
             }
         } else {

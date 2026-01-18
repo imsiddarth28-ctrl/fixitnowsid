@@ -1,0 +1,59 @@
+const express = require('express');
+const router = express.Router();
+const Technician = require('../models/Technician');
+const Job = require('../models/Job');
+const User = require('../models/User');
+
+// GET all technicians (for admin view)
+router.get('/technicians', async (req, res) => {
+    try {
+        const technicians = await Technician.find().sort({ createdAt: -1 });
+        res.json(technicians);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET all bookings/jobs
+router.get('/bookings', async (req, res) => {
+    try {
+        const jobs = await Job.find()
+            .populate('customerId', 'name email phone')
+            .populate('technicianId', 'name email serviceType')
+            .sort({ createdAt: -1 });
+        res.json(jobs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// APPROVE a technician
+router.put('/approve-technician/:id', async (req, res) => {
+    try {
+        const tech = await Technician.findByIdAndUpdate(
+            req.params.id,
+            { isVerified: true },
+            { new: true }
+        );
+        res.json(tech);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// BLOCK/UNBLOCK a technician
+router.put('/block-technician/:id', async (req, res) => {
+    try {
+        const { isBlocked } = req.body;
+        const tech = await Technician.findByIdAndUpdate(
+            req.params.id,
+            { isBlocked },
+            { new: true }
+        );
+        res.json(tech);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+module.exports = router;

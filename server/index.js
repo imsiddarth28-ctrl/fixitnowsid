@@ -41,8 +41,11 @@ const Complaint = require('./models/Complaint');
 const Message = require('./models/Message');
 
 // Routes
+// Routes
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('FixItNow Vercel-Native Real-Time Server Active 🚀 (Pusher Powered)');
