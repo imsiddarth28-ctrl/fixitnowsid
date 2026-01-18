@@ -138,8 +138,20 @@ const AdminDashboard = () => {
                         ADMIN.
                     </div>
                     {isMobile && (
-                        <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
-                            <X size={24} />
+                        <button
+                            onClick={() => setSidebarOpen(false)}
+                            style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '0.5rem',
+                                padding: '0.4rem',
+                                cursor: 'pointer',
+                                color: 'var(--text)',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <X size={20} />
                         </button>
                     )}
                 </div>
@@ -202,11 +214,14 @@ const AdminDashboard = () => {
             {/* Main Content */}
             <main style={{
                 flex: 1,
+                padding: isMobile ? '1.5rem' : '3rem 4rem',
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2rem',
+                overflowY: 'auto',
                 marginLeft: isMobile ? 0 : '280px',
-                padding: isMobile ? '1.5rem' : '2rem 3.3rem',
-                transition: 'margin-left 0.3s ease',
-                width: '100%',
-                overflowX: 'hidden'
+                width: isMobile ? '100%' : 'calc(100% - 280px)'
             }}>
                 {/* Mobile Header Toggle */}
                 {isMobile && (

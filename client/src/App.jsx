@@ -136,10 +136,11 @@ const MainApp = () => {
     return <AdminDashboard />;
   }
 
+  // Main App Shell
   return (
     <div className="app-container">
-      {/* Navigation (Standard) - Hidden for Admin Dashboard / Customer Dashboard / Public Landing Page */}
-      {((!user && activeTab !== 'home') || (user && user.role !== 'customer')) && (
+      {/* Navigation (Standard) - Strictly hidden for Admins and Customers (who have their own navs) */}
+      {(!user || (user.role !== 'admin' && user.role !== 'customer')) && activeTab !== 'home' && (
         <nav className={`navbar ${theme}`} style={{
           position: 'fixed',
           top: '1rem',
