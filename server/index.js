@@ -107,7 +107,7 @@ app.get('/api/technicians', async (req, res) => {
     const techsWithStatus = await Promise.all(techs.map(async (tech) => {
       const activeJob = await Job.findOne({
         technicianId: tech._id,
-        status: { $in: ['accepted', 'on_way', 'in_progress'] }
+        status: { $in: ['accepted', 'on_way', 'arrived', 'in_progress'] }
       });
       const techObj = tech.toObject();
       techObj.isBusy = !!activeJob;
@@ -188,7 +188,7 @@ app.post('/api/bookings', async (req, res) => {
     // 3. Check if tech is currently busy with another mission
     const activeMission = await Job.findOne({
       technicianId,
-      status: { $in: ['accepted', 'on_way', 'in_progress'] }
+      status: { $in: ['accepted', 'on_way', 'arrived', 'in_progress'] }
     });
 
     const newJob = new Job({
@@ -242,16 +242,23 @@ app.put('/api/jobs/:jobId/status', async (req, res) => {
     const updateData = { status };
     if (status === 'completed') updateData.completedAt = new Date();
 
-    const job = await Job.findByIdAndUpdate(req.params.jobId, updateData, { new: true });
+    const job = await Job.findByIdAndUpdate(req.params.jobId, updateData, { new: true })
+      .populate('customerId', 'name phone')
+      .populate('technicianId', 'name phone serviceType');
+
     if (status === 'completed' && job.technicianId) {
-      await Technician.findByIdAndUpdate(job.technicianId, {
+      // Tech earnings update happens with populated object too
+      await Technician.findByIdAndUpdate(job.technicianId._id, {
         $inc: { totalJobs: 1, earnings: job.price || 0 }
       });
     }
 
-    // Notify Customer via Pusher
+    // Notify BOTH Parties via Pusher
     if (job.customerId) {
-      await pusher.trigger(`user-${job.customerId}`, 'job_update', { job });
+      await pusher.trigger(`user-${job.customerId._id || job.customerId}`, 'job_update', { job });
+    }
+    if (job.technicianId) {
+      await pusher.trigger(`user-${job.technicianId._id || job.technicianId}`, 'job_update', { job });
     }
 
     res.json(job);

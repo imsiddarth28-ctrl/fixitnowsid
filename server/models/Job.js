@@ -6,7 +6,7 @@ const jobSchema = new mongoose.Schema({
     serviceType: { type: String, required: true },
     status: {
         type: String,
-        enum: ['pending', 'accepted', 'on_way', 'in_progress', 'completed', 'cancelled'],
+        enum: ['pending', 'accepted', 'on_way', 'arrived', 'in_progress', 'completed', 'cancelled', 'rejected'],
         default: 'pending'
     },
     location: {

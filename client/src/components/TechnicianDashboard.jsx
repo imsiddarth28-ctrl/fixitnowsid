@@ -11,6 +11,7 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
     const [recentJobs, setRecentJobs] = useState([]);
     const [isAvailable, setIsAvailable] = useState(false);
     const [view, setView] = useState('overview'); // overview, history, payments, settings
+    const [activeMissions, setActiveMissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
@@ -40,8 +41,20 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
         if (user) {
             fetchStats();
             fetchProfile();
+            fetchActiveMissions();
         }
     }, [user]);
+
+    const fetchActiveMissions = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/bookings/user/${user.id}?role=technician`);
+            const jobs = await res.json();
+            // Show jobs that are not completed/rejected/cancelled
+            setActiveMissions(jobs.filter(j => !['completed', 'rejected', 'cancelled'].includes(j.status)));
+        } catch (err) {
+            console.error('Error fetching missions:', err);
+        }
+    };
 
     const fetchStats = async () => {
         try {
@@ -608,8 +621,62 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
                     {view === 'history' && <BookingHistory role="technician" />}
 
                     {view === 'jobs' && (
-                        <div style={{ textAlign: 'center', padding: '4rem', border: '1px dashed var(--border)', borderRadius: '0.5rem' }}>
-                            <div style={{ fontWeight: 600, color: 'var(--text-muted)' }}>No active projects. Jobs will appear in the "Job Alert" banner at the bottom once they arrive.</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, color: 'var(--text)' }}>ASSIGNED SECTOR MISSIONS</h3>
+                                <button onClick={fetchActiveMissions} style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', letterSpacing: '0.05em' }}>REFRESH RADAR</button>
+                            </div>
+
+                            {activeMissions.length > 0 ? activeMissions.map(mission => (
+                                <div key={mission._id} style={{
+                                    background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '1rem',
+                                    padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    transition: 'transform 0.2s ease'
+                                }}>
+                                    <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                                        <div style={{
+                                            width: 60, height: 60, borderRadius: '1rem',
+                                            background: mission.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                                            color: mission.status === 'pending' ? '#f59e0b' : '#3b82f6',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem',
+                                            border: `1px solid ${mission.status === 'pending' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)'}`
+                                        }}>
+                                            {mission.serviceType[0]}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, letterSpacing: '0.1em' }}>PROJECT_ID: #{mission._id.slice(-6).toUpperCase()}</div>
+                                            <div style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.02em', margin: '0.2rem 0' }}>{mission.serviceType}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>📍 {mission.location?.address}</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '180px' }}>
+                                        <div style={{
+                                            padding: '0.4rem 1rem', borderRadius: '0.4rem',
+                                            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                                            color: mission.status === 'pending' ? '#f59e0b' : '#3b82f6',
+                                            fontSize: '0.7rem', fontWeight: 900, textAlign: 'center', letterSpacing: '0.1em'
+                                        }}>
+                                            {mission.status.toUpperCase()}
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTab('home')}
+                                            style={{
+                                                padding: '0.9rem 1.5rem', borderRadius: '0.5rem', background: 'var(--text)',
+                                                color: 'var(--bg)', border: 'none', fontWeight: 900, cursor: 'pointer',
+                                                fontSize: '0.8rem', letterSpacing: '0.05em'
+                                            }}
+                                        >
+                                            ENGAGE TRACKER
+                                        </button>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div style={{ textAlign: 'center', padding: '6rem', background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--border)', borderRadius: '1.5rem' }}>
+                                    <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.3 }}>🛸</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>RADAR CLEAR</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>No pending or active missions in your sector.</div>
+                                </div>
+                            )}
                         </div>
                     )}
 

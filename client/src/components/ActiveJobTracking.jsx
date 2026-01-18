@@ -271,8 +271,23 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate }) => {
                                         COMPLETE MISSION
                                     </motion.button>
                                 ) : (
-                                    <div style={{ color: '#22c55e', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <CheckCircle2 size={24} /> MISSION ACCOMPLISHED
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                                        <div style={{ color: '#22c55e', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <CheckCircle2 size={24} /> MISSION ACCOMPLISHED
+                                        </div>
+                                        {user.role === 'technician' && (
+                                            <button
+                                                onClick={() => onStatusUpdate(null)}
+                                                style={{
+                                                    padding: '0.6rem 1.2rem', borderRadius: '0.5rem',
+                                                    background: 'var(--text)', color: 'var(--bg)',
+                                                    border: 'none', fontWeight: 700, cursor: 'pointer',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                RETURN TO HUB
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </>

@@ -28,8 +28,15 @@ const MainApp = () => {
     if (!user) return;
 
     const handleJobUpdate = (data) => {
-      if (data.job.status === 'accepted' || data.job.status === 'arrived' || data.job.status === 'in_progress' || data.job.status === 'completed') {
+      const { status } = data.job;
+      if (status === 'accepted' || status === 'arrived' || status === 'in_progress' || status === 'completed') {
         setActiveJob(data.job);
+      } else if (status === 'rejected' || status === 'cancelled') {
+        // Only clear if the current activeJob is the one being rejected/cancelled
+        setActiveJob(prev => (prev?._id === data.job._id ? null : prev));
+        if (user?.role === 'customer' && status === 'rejected') {
+          alert('Your booking request was declined. Please try another technician.');
+        }
       }
     };
 
@@ -51,13 +58,26 @@ const MainApp = () => {
   useEffect(() => {
     if (user?.role === 'admin') {
       setActiveTab('admin-dashboard');
-    } else if (user && window.location.pathname === '/admin') {
-      // If logged in as non-admin on admin page, logout or redirect home?
-      // Let's force logout to allow admin login
-      // logout(); // This might cause infinite loop if not careful.
-      // Better: Don't auto-redirect. AdminLogin component checks '!user'.
-      // If 'user' exists and is not admin, we should render 'Access Denied' or button to Logout.
     }
+  }, [user]);
+
+  // AUTO-RECOVER ACTIVE JOB ON MOUNT
+  useEffect(() => {
+    if (!user) return;
+    const recoverJob = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/bookings/user/${user.id}?role=${user.role}`);
+        const jobs = await res.json();
+        // Find the most recent non-completed/non-rejected job
+        const active = jobs.find(j =>
+          !['completed', 'rejected', 'cancelled'].includes(j.status)
+        );
+        if (active) setActiveJob(active);
+      } catch (err) {
+        console.error('Failed to recover active job:', err);
+      }
+    };
+    recoverJob();
   }, [user]);
 
   const handlePaymentSuccess = () => {
