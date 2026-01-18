@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
 const AdminLogin = () => {
     const { login } = useAuth();
-    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [isLogin, setIsLogin] = useState(true);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        adminCode: '' // The Secret Code
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -13,16 +20,43 @@ const AdminLogin = () => {
         setLoading(true);
 
         try {
-            // Hardcode role 'admin' for this route
-            const res = await login(formData.email, formData.password, 'admin');
-            if (!res.success) {
-                setError(res.message);
+            if (isLogin) {
+                // Hardcode role 'admin' for this route
+                const res = await login(formData.email, formData.password, 'admin');
+                if (!res.success) {
+                    setError(res.message);
+                }
+            } else {
+                // REGISTER ADMIN
+                const res = await fetch(`${API_URL}/api/auth/register/admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password,
+                        adminCode: formData.adminCode
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('Admin Access Granted. Please log in.');
+                    setIsLogin(true);
+                } else {
+                    setError(data.message || 'Access Denied');
+                }
             }
         } catch (err) {
+            console.error(err);
             setError('System error. Please try again.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     return (
@@ -37,7 +71,7 @@ const AdminLogin = () => {
         }}>
             <div style={{
                 width: '100%',
-                maxWidth: '400px',
+                maxWidth: '430px',
                 padding: '3rem',
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
@@ -58,10 +92,10 @@ const AdminLogin = () => {
                         fontWeight: 700,
                         margin: 0
                     }}>
-                        Internal Admin Portal
+                        {isLogin ? 'Internal Admin Portal' : 'Admin Protocol Init'}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                        Enter your credentials to manage the platform
+                        {isLogin ? 'Enter your credentials to manage the platform' : 'Enter security code for elevated access'}
                     </p>
                 </div>
 
@@ -80,52 +114,87 @@ const AdminLogin = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+
+                    {!isLogin && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>
+                                Admin Name
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Root Admin"
+                                style={{
+                                    width: '100%', padding: '0.8rem', background: 'var(--bg)',
+                                    border: '1px solid var(--border)', color: 'var(--text)',
+                                    borderRadius: '0.5rem', outline: 'none', fontSize: '0.95rem'
+                                }}
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                    )}
+
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>
                             Admin Email
                         </label>
                         <input
                             type="email"
+                            name="email"
                             placeholder="admin@fixitnow.com"
                             style={{
-                                width: '100%',
-                                padding: '1rem',
-                                background: 'var(--bg)',
-                                border: '1px solid var(--border)',
-                                color: 'var(--text)',
-                                borderRadius: '0.5rem',
-                                outline: 'none',
-                                fontSize: '0.95rem'
+                                width: '100%', padding: '0.8rem', background: 'var(--bg)',
+                                border: '1px solid var(--border)', color: 'var(--text)',
+                                borderRadius: '0.5rem', outline: 'none', fontSize: '0.95rem'
                             }}
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            onChange={handleChange}
                             required
                         />
                     </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
+                    <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>
                             Password
                         </label>
                         <input
                             type="password"
+                            name="password"
                             placeholder="••••••••"
                             style={{
-                                width: '100%',
-                                padding: '1rem',
-                                background: 'var(--bg)',
-                                border: '1px solid var(--border)',
-                                color: 'var(--text)',
-                                borderRadius: '0.5rem',
-                                outline: 'none',
-                                fontSize: '0.95rem'
+                                width: '100%', padding: '0.8rem', background: 'var(--bg)',
+                                border: '1px solid var(--border)', color: 'var(--text)',
+                                borderRadius: '0.5rem', outline: 'none', fontSize: '0.95rem'
                             }}
                             value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            onChange={handleChange}
                             required
                         />
                     </div>
+
+                    {!isLogin && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#f59e0b' }}>
+                                Security Clearance Code
+                            </label>
+                            <input
+                                type="password"
+                                name="adminCode"
+                                placeholder="Enter Access Code"
+                                style={{
+                                    width: '100%', padding: '0.8rem', background: 'rgba(245, 158, 11, 0.05)',
+                                    border: '1px solid #f59e0b', color: 'var(--text)',
+                                    borderRadius: '0.5rem', outline: 'none', fontSize: '0.95rem', letterSpacing: '2px'
+                                }}
+                                value={formData.adminCode}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                    )}
 
                     <button
                         type="submit"
@@ -135,15 +204,24 @@ const AdminLogin = () => {
                             width: '100%',
                             padding: '1rem',
                             fontSize: '1rem',
+                            marginTop: '1rem',
                             opacity: loading ? 0.7 : 1,
                             cursor: loading ? 'not-allowed' : 'pointer'
                         }}
                     >
-                        {loading ? 'Authorizing...' : 'Authorize Access'}
+                        {loading ? 'Processing...' : (isLogin ? 'Authorize Access' : 'Create System Admin')}
                     </button>
 
-                    <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-                        <a href="/" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none' }}>
+                    <div style={{ textAlign: 'center', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <button
+                            type="button"
+                            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                            style={{ background: 'transparent', border: 'none', textDecoration: 'underline', color: 'var(--text)', cursor: 'pointer', fontSize: '0.9rem' }}
+                        >
+                            {isLogin ? 'Initial Admin Registration' : 'Return to Login'}
+                        </button>
+
+                        <a href="/" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textDecoration: 'none' }}>
                             Go back to Public Site
                         </a>
                     </div>

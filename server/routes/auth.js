@@ -84,6 +84,41 @@ router.post('/register/technician', async (req, res) => {
     }
 });
 
+// REGISTER ADMIN (Protected by Secret Code)
+router.post('/register/admin', async (req, res) => {
+    try {
+        const { name, email, password, adminCode } = req.body;
+
+        // 1. Verify Secret Code
+        if (adminCode !== '6757') {
+            return res.status(403).json({ message: 'Invalid Admin Code. Access Denied.' });
+        }
+
+        // 2. Check if email exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already registered' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 3. Create Admin User
+        const adminUser = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'admin', // Explicitly set role
+            phone: '0000000000' // Placeholder or optional for admin
+        });
+
+        await adminUser.save();
+
+        res.status(201).json({ message: 'sys_admin access granted. Welcome Commander.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // LOGIN (Generic)
 router.post('/login', async (req, res) => {
     try {
