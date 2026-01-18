@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation, MapPin, Clock, Phone, MessageSquare, CheckCircle2, AlertCircle, X } from 'lucide-react';
-import LiveMap from './LiveMap';
+import { Navigation, MapPin, Clock, Phone, MessageSquare, CheckCircle2, AlertCircle, X, ShieldAlert } from 'lucide-react';
 import ServiceReceipt from './ServiceReceipt';
 import Chat from './Chat';
 import API_URL from '../config';
@@ -59,12 +58,20 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate }) => {
             }}>
                 {/* Map Background */}
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                    <LiveMap
-                        role="technician"
-                        jobId={job._id}
-                        initialLocation={{ x: 20, y: 20 }}
-                        customerLocation={{ x: job.location?.longitude || 75, y: job.location?.latitude || 65 }}
-                    />
+                    {/* Map Replacement Placeholder */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'radial-gradient(circle at center, #111 0%, #000 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexDirection: 'column', gap: '1rem'
+                    }}>
+                        <div style={{ opacity: 0.1 }}>
+                            <ShieldAlert size={120} />
+                        </div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.2em' }}>
+                            SECURE TRACKING LAYER ACTIVE
+                        </div>
+                    </div>
 
                     {/* Floating Info Overlay */}
                     <motion.div

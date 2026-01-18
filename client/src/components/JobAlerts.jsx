@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { subscribeToEvent } from '../socket';
 import { useAuth } from '../context/AuthContext';
-import LiveMap from './LiveMap';
 import API_URL from '../config';
 import Chat from './Chat';
 import { motion, AnimatePresence } from 'framer-motion';

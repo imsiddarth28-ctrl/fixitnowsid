@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TechnicianList from './TechnicianList';
-import Wallet from './Wallet';
 import BookingHistory from './BookingHistory';
-import Support from './Support';
-import ProfileSettings from './ProfileSettings';
 
 const CustomerDashboard = () => {
     const { user, logout } = useAuth();
@@ -14,7 +11,6 @@ const CustomerDashboard = () => {
 
     const menuItems = [
         { id: 'services', label: 'Service Search' },
-        { id: 'wallet', label: 'Payment & Wallet' },
         { id: 'history', label: 'Booking History' },
         { id: 'profile', label: 'Profile Settings' },
         { id: 'reviews', label: 'My Reviews' },
@@ -213,27 +209,23 @@ const CustomerDashboard = () => {
                         </div>
                     )}
 
-                    {view === 'wallet' && (
-                        <div className="animate-fade-in">
-                            <Wallet />
-                        </div>
-                    )}
-
                     {view === 'history' && (
                         <div className="animate-fade-in">
                             <BookingHistory />
                         </div>
                     )}
 
-                    {view === 'profile' && (
-                        <div className="animate-fade-in">
-                            <ProfileSettings />
-                        </div>
-                    )}
-
-                    {view === 'support' && (
-                        <div className="animate-fade-in">
-                            <Support />
+                    {(view === 'profile' || view === 'support' || view === 'wallet') && (
+                        <div className="animate-fade-in" style={{
+                            padding: '4rem 2rem',
+                            border: '1px dashed var(--border)',
+                            borderRadius: '1rem',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)'
+                        }}>
+                            <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🏗️</div>
+                            <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text)' }}>Coming Soon</div>
+                            <p style={{ fontSize: '0.9rem', margin: 0 }}>This specialized module is currently being optimized for your experience.</p>
                         </div>
                     )}
 
