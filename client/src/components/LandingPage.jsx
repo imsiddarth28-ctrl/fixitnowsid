@@ -338,6 +338,7 @@ const LandingPage = ({ onFindTechnician, onJoinPro }) => {
                             <a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>About</a>
                             <a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Careers</a>
                             <a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>Contact</a>
+                            <a href="/admin" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>Admin Portal</a>
                         </div>
                     </div>
                     <div>
