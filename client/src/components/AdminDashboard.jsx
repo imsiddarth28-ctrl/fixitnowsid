@@ -127,12 +127,15 @@ const AdminDashboard = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
                     <div style={{
                         fontFamily: 'var(--font-heading)',
-                        fontWeight: 800,
-                        fontSize: '1.5rem',
-                        letterSpacing: '-0.02em',
-                        color: 'var(--text)'
+                        fontWeight: 900,
+                        fontSize: '1.6rem',
+                        letterSpacing: '-0.03em',
+                        color: 'var(--text)',
+                        background: 'linear-gradient(to right, var(--text), var(--text-muted))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
                     }}>
-                        Admin.
+                        ADMIN.
                     </div>
                     {isMobile && (
                         <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
@@ -220,33 +223,52 @@ const AdminDashboard = () => {
                     display: 'flex',
                     flexDirection: isMobile ? 'column' : 'row',
                     justifyContent: 'space-between',
-                    alignItems: isMobile ? 'flex-start' : 'flex-end',
+                    alignItems: isMobile ? 'flex-start' : 'center',
                     gap: isMobile ? '1rem' : 0,
-                    marginBottom: '3rem'
+                    marginBottom: '4rem',
+                    paddingBottom: '2rem',
+                    borderBottom: '1px solid var(--border)'
                 }}>
                     <div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            ROOT CONTROL / {menuItems.find(m => m.id === view)?.label}
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                            CORE COMMAND / {menuItems.find(m => m.id === view)?.label}
                         </div>
                         <h1 style={{
-                            fontSize: isMobile ? '1.8rem' : '2rem',
-                            fontWeight: 800,
+                            fontSize: isMobile ? '1.8rem' : '2.5rem',
+                            fontWeight: 900,
                             fontFamily: 'var(--font-heading)',
-                            margin: 0
+                            margin: 0,
+                            letterSpacing: '-0.02em'
                         }}>
                             Platform Command
                         </h1>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2rem' }}>
-                        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>TOTAL VOLUME</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>${stats.totalEarnings.toFixed(2)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
+                        <div style={{ display: 'flex', gap: '2rem' }}>
+                            <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 800 }}>TOTAL VOLUME</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>${stats.totalEarnings.toFixed(2)}</div>
+                            </div>
+                            <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 800 }}>AVG RATING</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{stats.avgRating}</div>
+                            </div>
                         </div>
-                        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>AVG RATING</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stats.avgRating}</div>
-                        </div>
+
+                        {!isMobile && (
+                            <div style={{ height: '40px', width: '1px', background: 'var(--border)' }}></div>
+                        )}
+
+                        {!isMobile && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--text)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>A</div>
+                                <div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Root Admin</div>
+                                    <button onClick={logout} style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', fontWeight: 600, cursor: 'pointer' }}>Logout</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </header>
 

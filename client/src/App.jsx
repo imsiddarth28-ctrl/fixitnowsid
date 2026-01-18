@@ -133,15 +133,7 @@ const MainApp = () => {
 
   // Admin Dashboard View (Full Page)
   if (activeTab === 'admin-dashboard' && user?.role === 'admin') {
-    return (
-      <div>
-        <nav className="glass-panel" style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h1 className="text-gradient">FixItNow Admin</h1>
-          <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>Logout</button>
-        </nav>
-        <AdminDashboard />
-      </div>
-    )
+    return <AdminDashboard />;
   }
 
   return (

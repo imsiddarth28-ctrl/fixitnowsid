@@ -56,4 +56,14 @@ router.put('/block-technician/:id', async (req, res) => {
     }
 });
 
+// REJECT a technician (Delete Application)
+router.delete('/reject-technician/:id', async (req, res) => {
+    try {
+        await Technician.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Technician application rejected and removed.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
