@@ -90,7 +90,8 @@ router.post('/register/admin', async (req, res) => {
         const { name, email, password, adminCode } = req.body;
 
         // 1. Verify Secret Code
-        if (adminCode !== '6757') {
+        const SECRET_CODE = process.env.ADMIN_SECRET_CODE || '6757'; // Default for dev, override in Prod/Vercel
+        if (adminCode !== SECRET_CODE) {
             return res.status(403).json({ message: 'Invalid Admin Code. Access Denied.' });
         }
 
