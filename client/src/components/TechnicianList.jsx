@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-
 import API_URL from '../config';
 import { motion } from 'framer-motion';
-import LiveMap from './LiveMap';
+import { Clock } from 'lucide-react'; // Ensure icon import if missing
+import LocationPicker from './LocationPicker'; // Replaces LiveMap
 
 const TechnicianList = ({ onBookingSuccess }) => {
     const [technicians, setTechnicians] = useState([]);
@@ -15,12 +15,14 @@ const TechnicianList = ({ onBookingSuccess }) => {
     // Booking Form State
     const [description, setDescription] = useState('');
     const [address, setAddress] = useState('');
-    const [pickedLocation, setPickedLocation] = useState({ x: 75, y: 65 });
+    // Default to Hyderabad or 0,0 - User will pick on map
+    const [pickedLocation, setPickedLocation] = useState({ lat: 17.3850, lng: 78.4867 });
     const [isEmergency, setIsEmergency] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
 
     useEffect(() => {
+        // ... (fetch technicians logic same as before) ...
         fetch(`${API_URL}/api/technicians`)
             .then(res => res.json())
             .then(data => {
@@ -28,7 +30,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
                 setLoading(false);
             })
             .catch(err => {
-                console.error('Error fetching technicians:', err);
+                console.error('Error fetching techs:', err);
                 setLoading(false);
             });
     }, []);
@@ -56,8 +58,9 @@ const TechnicianList = ({ onBookingSuccess }) => {
             price: isEmergency ? 80 : 50,
             location: {
                 address,
-                latitude: pickedLocation.y,
-                longitude: pickedLocation.x
+                // Use real coordinates from LocationPicker
+                latitude: pickedLocation.lat,
+                longitude: pickedLocation.lng
             },
             description,
             isEmergency
@@ -72,7 +75,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
             const data = await res.json();
             if (res.ok) {
                 setBookingSuccess(true);
-                // Wait for animation
                 setTimeout(() => {
                     setSelectedTech(null);
                     setBookingSuccess(false);
@@ -91,6 +93,8 @@ const TechnicianList = ({ onBookingSuccess }) => {
             setIsBooking(false);
         }
     };
+
+    // ... (rest of the component until the modal) ...
 
     const filteredTechs = filter === 'all'
         ? technicians
@@ -117,7 +121,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
 
     return (
         <div style={{ minHeight: '100vh', padding: 'clamp(2rem, 5vw, 6rem) clamp(1rem, 3vw, 2rem) 4rem' }}>
-            {/* Header */}
+            {/* ... (Header and Filters same as original) ... */}
             <div style={{ maxWidth: '1400px', margin: '0 auto', marginBottom: '3rem' }}>
                 <h1 style={{
                     fontFamily: 'var(--font-heading)',
@@ -219,7 +223,7 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)'
                             }}
                         >
-                            {/* Animated Glow Base */}
+                            {/* ... (Tech Card internals - same as original) ... */}
                             <motion.div
                                 animate={{
                                     opacity: tech.isBusy ? 0.2 : (tech.isAvailable ? [0.1, 0.3, 0.1] : 0),
@@ -233,7 +237,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 }}
                             />
 
-                            {/* Status Badge */}
                             <div style={{
                                 position: 'absolute',
                                 top: '1.5rem',
@@ -261,7 +264,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 {tech.isBusy ? 'IN MISSION' : (tech.isAvailable ? 'READY TO HELP' : 'BUSY NOW')}
                             </div>
 
-                            {/* Avatar with 3D shadow */}
                             <div style={{
                                 width: '80px', height: '80px', borderRadius: '2rem',
                                 background: 'linear-gradient(135deg, var(--bg) 0%, var(--border) 100%)',
@@ -273,7 +275,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 {tech.name[0]}
                             </div>
 
-                            {/* Name & Rating */}
                             <h3 style={{
                                 fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem',
                                 letterSpacing: '-0.02em', transform: 'translateZ(40px)'
@@ -289,7 +290,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{tech.totalJobs} projects</span>
                             </div>
 
-                            {/* Service Type Label */}
                             <div style={{
                                 display: 'inline-flex', padding: '0.4rem 1rem', borderRadius: '0.5rem',
                                 background: 'var(--bg)', border: '1px solid var(--border)',
@@ -308,7 +308,6 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                 </div>
                             )}
 
-                            {/* Book Button with Micro-interaction */}
                             <motion.button
                                 whileHover={{ scale: 1.05, y: -2 }}
                                 whileTap={{ scale: 0.95 }}
@@ -367,23 +366,15 @@ const TechnicianList = ({ onBookingSuccess }) => {
                         boxShadow: '0 40px 100px -20px rgba(0,0,0,0.3)',
                         position: 'relative'
                     }}>
-                        {/* Success Overlay */}
+                        {/* Success Overlay - Same as before */}
                         {bookingSuccess && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    background: 'var(--bg)',
-                                    borderRadius: '1rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    zIndex: 100,
-                                    textAlign: 'center',
-                                    padding: '2rem'
+                                    position: 'absolute', inset: 0, background: 'var(--bg)', borderRadius: '1rem',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 100, textAlign: 'center', padding: '2rem'
                                 }}
                             >
                                 <motion.div
@@ -391,17 +382,10 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                     animate={{ scale: [0, 1.2, 1] }}
                                     transition={{ duration: 0.5 }}
                                     style={{
-                                        width: '80px',
-                                        height: '80px',
-                                        borderRadius: '50%',
-                                        background: '#22c55e',
-                                        color: 'white',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '2.5rem',
-                                        marginBottom: '1.5rem',
-                                        boxShadow: '0 10px 30px rgba(34, 197, 94, 0.4)'
+                                        width: '80px', height: '80px', borderRadius: '50%',
+                                        background: '#22c55e', color: 'white', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem',
+                                        marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(34, 197, 94, 0.4)'
                                     }}
                                 >
                                     ✓
@@ -418,48 +402,27 @@ const TechnicianList = ({ onBookingSuccess }) => {
                             </motion.div>
                         )}
 
-                        {/* Close Button */}
                         <button
                             onClick={() => setSelectedTech(null)}
                             style={{
-                                position: 'absolute',
-                                top: '1.5rem',
-                                right: '1.5rem',
-                                background: 'transparent',
-                                border: 'none',
-                                fontSize: '1.5rem',
-                                cursor: 'pointer',
-                                color: 'var(--text-muted)',
-                                padding: 0,
-                                zIndex: 101
+                                position: 'absolute', top: '1.5rem', right: '1.5rem',
+                                background: 'transparent', border: 'none', fontSize: '1.5rem',
+                                cursor: 'pointer', color: 'var(--text-muted)', padding: 0, zIndex: 101
                             }}
                         >
                             ×
                         </button>
 
-                        {/* Header */}
-                        <h2 style={{
-                            fontFamily: 'var(--font-heading)',
-                            fontSize: '2rem',
-                            fontWeight: 700,
-                            marginBottom: '0.5rem'
-                        }}>
+                        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                             Book {selectedTech.name}
                         </h2>
 
                         {selectedTech.isBusy ? (
                             <div style={{
-                                background: 'rgba(245, 158, 11, 0.1)',
-                                border: '1px solid rgba(245, 158, 11, 0.2)',
-                                padding: '1rem',
-                                borderRadius: '0.8rem',
-                                marginBottom: '1.5rem',
-                                color: '#ca8a04',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.8rem'
+                                background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)',
+                                padding: '1rem', borderRadius: '0.8rem', marginBottom: '1.5rem',
+                                color: '#ca8a04', fontSize: '0.85rem', fontWeight: 700, display: 'flex',
+                                alignItems: 'center', gap: '0.8rem'
                             }}>
                                 <Clock size={20} />
                                 <span>RESERVATION MODE: This pro is on a mission. Book now to be their next priority!</span>
@@ -470,15 +433,9 @@ const TechnicianList = ({ onBookingSuccess }) => {
                             </p>
                         )}
 
-                        {/* Form */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '0.5rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600
-                                }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
                                     Describe the Issue
                                 </label>
                                 <textarea
@@ -487,16 +444,10 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                     placeholder="e.g., Kitchen sink is leaking..."
                                     rows={4}
                                     style={{
-                                        width: '100%',
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        resize: 'vertical',
-                                        fontFamily: 'inherit',
-                                        color: 'var(--text)'
+                                        width: '100%', padding: '0.875rem 1rem', borderRadius: '0.5rem',
+                                        border: '1px solid var(--border)', background: 'var(--card)',
+                                        fontSize: '0.95rem', outline: 'none', resize: 'vertical',
+                                        fontFamily: 'inherit', color: 'var(--text)'
                                     }}
                                     onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
                                     onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
@@ -514,52 +465,31 @@ const TechnicianList = ({ onBookingSuccess }) => {
                                         onChange={e => setAddress(e.target.value)}
                                         placeholder="Room/Building/Street"
                                         style={{
-                                            width: '100%',
-                                            padding: '0.875rem 1rem',
-                                            borderRadius: '0.5rem',
-                                            border: '1px solid var(--border)',
-                                            background: 'var(--card)',
-                                            fontSize: '0.95rem',
-                                            outline: 'none',
-                                            color: 'var(--text)'
+                                            width: '100%', padding: '0.875rem 1rem', borderRadius: '0.5rem',
+                                            border: '1px solid var(--border)', background: 'var(--card)',
+                                            fontSize: '0.95rem', outline: 'none', color: 'var(--text)'
                                         }}
                                     />
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                        Move the pin on the map for precise location →
+                                    </p>
                                 </div>
-                                <div style={{ height: '160px', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                    <LiveMap mode="select" onLocationSelect={setPickedLocation} />
+                                <div style={{ height: '200px', borderRadius: '0.8rem', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+                                    <LocationPicker onLocationSelect={setPickedLocation} initialLocation={pickedLocation} />
                                 </div>
                             </div>
 
-                            {/* Emergency Checkbox */}
                             <div style={{
-                                padding: '1rem',
-                                background: 'rgba(239, 68, 68, 0.05)',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                borderRadius: '0.5rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem'
+                                padding: '1rem', background: 'rgba(239, 68, 68, 0.05)',
+                                border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '0.5rem',
+                                display: 'flex', alignItems: 'center', gap: '0.75rem'
                             }}>
                                 <input
-                                    type="checkbox"
-                                    id="emergency"
-                                    checked={isEmergency}
+                                    type="checkbox" id="emergency" checked={isEmergency}
                                     onChange={(e) => setIsEmergency(e.target.checked)}
-                                    style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        cursor: 'pointer'
-                                    }}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                                 />
-                                <label
-                                    htmlFor="emergency"
-                                    style={{
-                                        color: 'var(--error)',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        fontSize: '0.95rem'
-                                    }}
-                                >
+                                <label htmlFor="emergency" style={{ color: 'var(--error)', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem' }}>
                                     🚨 Emergency Service (+$30)
                                 </label>
                             </div>
@@ -567,16 +497,9 @@ const TechnicianList = ({ onBookingSuccess }) => {
                             <button
                                 className="btn btn-primary"
                                 style={{
-                                    width: '100%',
-                                    padding: '1rem',
-                                    fontSize: '1rem',
-                                    marginTop: '0.5rem',
-                                    opacity: isBooking ? 0.7 : 1,
-                                    cursor: isBooking ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem'
+                                    width: '100%', padding: '1rem', fontSize: '1rem', marginTop: '0.5rem',
+                                    opacity: isBooking ? 0.7 : 1, cursor: isBooking ? 'not-allowed' : 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
                                 }}
                                 onClick={confirmBooking}
                                 disabled={isBooking}
