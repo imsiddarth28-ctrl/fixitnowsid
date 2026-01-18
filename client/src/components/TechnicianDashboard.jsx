@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
 import { motion, AnimatePresence } from 'framer-motion';
 import BookingHistory from './BookingHistory';
+import { Menu, X } from 'lucide-react';
 
 const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
     const { user, logout } = useAuth();
@@ -13,6 +14,10 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
+    // Responsive State
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Tablet/Mobile
+
     // Profile Settings State
     const [profile, setProfile] = useState({
         name: user?.name || '',
@@ -22,8 +27,13 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
     });
 
     useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
         const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
-        return () => clearInterval(timer);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearInterval(timer);
+        };
     }, []);
 
     useEffect(() => {
@@ -118,8 +128,20 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
             width: '100%',
             position: 'relative',
             textAlign: 'left',
-            fontFamily: '"Inter", sans-serif'
+            fontFamily: '"Inter", sans-serif',
+            overflowX: 'hidden'
         }}>
+            {/* Mobile Overlay */}
+            {isMobile && sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40,
+                        backdropFilter: 'blur(4px)'
+                    }}
+                />
+            )}
+
             {/* Sidebar - Pro Version */}
             <aside style={{
                 width: '280px',
@@ -131,9 +153,11 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
                 position: 'fixed',
                 left: 0,
                 top: 0,
-                zIndex: 10,
-                background: 'rgba(0,0,0,0.2)',
-                backdropFilter: 'blur(20px)'
+                zIndex: 50,
+                background: 'rgba(20, 20, 20, 0.95)', // Solid background for mobile legibility
+                backdropFilter: 'blur(20px)',
+                transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+                transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
             }}>
                 <div style={{
                     fontFamily: 'var(--font-heading)',
@@ -143,31 +167,38 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
                     letterSpacing: '-0.05em',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.8rem',
+                    justifyContent: 'space-between',
                     color: 'var(--text)'
                 }}>
-                    <div style={{ position: 'relative' }}>
-                        <div style={{
-                            width: 14, height: 14, background: '#3b82f6',
-                            boxShadow: '0 0 15px #3b82f6', borderRadius: '3px'
-                        }}></div>
-                        <motion.div
-                            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            style={{
-                                position: 'absolute', top: 0, left: 0, width: 14, height: 14,
-                                background: '#3b82f6', borderRadius: '3px', zIndex: -1
-                            }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <div style={{ position: 'relative' }}>
+                            <div style={{
+                                width: 14, height: 14, background: '#3b82f6',
+                                boxShadow: '0 0 15px #3b82f6', borderRadius: '3px'
+                            }}></div>
+                            <motion.div
+                                animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                style={{
+                                    position: 'absolute', top: 0, left: 0, width: 14, height: 14,
+                                    background: '#3b82f6', borderRadius: '3px', zIndex: -1
+                                }}
+                            />
+                        </div>
+                        <div>FIXIT<span style={{ fontWeight: 300, opacity: 0.6 }}>PRO</span></div>
                     </div>
-                    FIXIT<span style={{ fontWeight: 300, opacity: 0.6 }}>PRO</span>
+                    {isMobile && (
+                        <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
+                            <X size={24} />
+                        </button>
+                    )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
                     {menuItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={() => setView(item.id)}
+                            onClick={() => { setView(item.id); if (isMobile) setSidebarOpen(false); }}
                             style={{
                                 textAlign: 'left',
                                 padding: '0.8rem 1.2rem',
@@ -266,9 +297,17 @@ const TechnicianDashboard = ({ activeJob, setActiveTab }) => {
             {/* Main Workspace */}
             <main style={{
                 flex: 1,
-                marginLeft: '280px',
-                padding: '2rem 3rem'
+                marginLeft: isMobile ? 0 : '280px',
+                padding: isMobile ? '1.5rem' : '2rem 3rem',
+                transition: 'margin-left 0.3s ease',
+                width: '100%'
             }}>
+                {/* Mobile Trigger */}
+                {isMobile && (
+                    <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', marginBottom: '2rem', padding: 0, color: 'var(--text)', cursor: 'pointer' }}>
+                        <Menu size={24} />
+                    </button>
+                )}
                 {/* Status & Action Bar */}
                 <header style={{
                     display: 'flex',
