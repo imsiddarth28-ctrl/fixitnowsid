@@ -70,19 +70,7 @@ const CustomerDashboard = () => {
             )}
 
             {/* Sidebar */}
-            <aside style={{
-                width: '280px',
-                borderRight: '1px solid var(--border)',
-                padding: '2rem 1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100vh',
-                position: 'fixed',
-                left: 0,
-                top: 0,
-                zIndex: 10,
-                background: 'var(--bg)'
-            }} className="customer-sidebar">
+            <aside className="customer-sidebar">
                 <div style={{
                     fontFamily: 'var(--font-heading)',
                     fontWeight: 800,
@@ -162,11 +150,7 @@ const CustomerDashboard = () => {
             </aside>
 
             {/* Main Content */}
-            <main style={{
-                flex: 1,
-                marginLeft: '280px',
-                padding: '2rem 3rem'
-            }}>
+            <main className="dashboard-main">
                 {/* Header Section */}
                 <header style={{
                     display: 'flex',
@@ -191,7 +175,7 @@ const CustomerDashboard = () => {
                     </div>
 
                     {/* Smart Insights Panel */}
-                    <div style={{
+                    <div className="desktop-only" style={{
                         display: 'flex',
                         gap: '1.5rem',
                         background: 'rgba(255,255,255,0.02)',
@@ -277,13 +261,32 @@ const CustomerDashboard = () => {
                     to { opacity: 1; transform: translateY(0); }
                 }
 
-                /* Default: Hide mobile elements on desktop */
+                /* Default: Desktop Styles (Base) */
                 .mobile-menu-toggle {
                     display: none;
                 }
-
                 .mobile-backdrop {
                     display: none;
+                }
+                .customer-sidebar {
+                    width: 280px;
+                    border-right: 1px solid var(--border);
+                    padding: 2rem 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    height: 100vh;
+                    position: fixed;
+                    left: 0;
+                    top: 0;
+                    z-index: 10;
+                    background: var(--bg);
+                    transform: translateX(0); /* Default visible */
+                }
+                .dashboard-main {
+                    flex: 1;
+                    margin-left: 280px; /* Space for sidebar */
+                    padding: 2rem 3rem;
+                    width: calc(100% - 280px);
                 }
 
                 /* Mobile Responsive Styles */
@@ -296,30 +299,33 @@ const CustomerDashboard = () => {
                         display: block !important;
                     }
 
-                    .customer-sidebar {
-                        transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'} !important;
-                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.5)' : 'none'};
-                        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    .desktop-only {
+                        display: none !important;
                     }
 
-                    main {
+                    .customer-sidebar {
+                        transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'};
+                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.5)' : 'none'};
+                        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                        width: 280px; /* Fixed width sidebar on mobile too */
+                        z-index: 1000; /* Below toggle button (1001) */
+                    }
+                    /* Let's put sidebar above content but below toggle if toggle is inside sidebar? 
+                       Toggle is fixed at top-left. 
+                       If sidebar opens, it covers top-left.
+                       We want Toggle ('X') to be visible. Toggle z=1001. Sidebar z should be < 1001.
+                       Sidebar z=10. This is fine.
+                    */
+
+                    .dashboard-main {
                         margin-left: 0 !important;
                         padding: 5rem 1.5rem 2rem !important;
+                        width: 100%;
                     }
                 }
 
                 @media (min-width: 769px) {
-                    .customer-sidebar {
-                        transform: translateX(0) !important;
-                    }
-                    
-                    .mobile-menu-toggle {
-                        display: none !important;
-                    }
-
-                    .mobile-backdrop {
-                        display: none !important;
-                    }
+                    /* Reinforce desktop rules if needed, but Base checks out */
                 }
             `}</style>
         </div>
