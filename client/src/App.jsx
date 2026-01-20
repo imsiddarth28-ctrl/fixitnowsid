@@ -97,17 +97,32 @@ const MainApp = () => {
 
   // IF CUSTOMER: Render dedicated Dashboard Layout
   if (user?.role === 'customer' && !activeTab.startsWith('admin')) {
-    if (activeJob && (activeJob.status !== 'completed' || activeTab === 'home')) {
+    // Show tracking view only when explicitly on 'home' tab AND there's an active job
+    if (activeTab === 'home' && activeJob && !['completed', 'rejected', 'cancelled'].includes(activeJob.status)) {
       return (
         <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-          <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
+          <ActiveJobTracking
+            job={activeJob}
+            user={user}
+            onStatusUpdate={(updatedJob) => {
+              setActiveJob(updatedJob);
+              // If job is completed, stay on tracking to show receipt
+              // User can manually go back to dashboard
+            }}
+            onBack={() => setActiveTab('dashboard')}
+          />
           <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
         </div>
       );
     }
+    // Otherwise show the customer dashboard
     return (
       <>
-        <CustomerDashboard activeJob={activeJob} setActiveJob={setActiveJob} />
+        <CustomerDashboard
+          activeJob={activeJob}
+          setActiveJob={setActiveJob}
+          setActiveTab={setActiveTab}
+        />
         <JobAlerts activeJob={activeJob} setActiveJob={setActiveJob} />
       </>
     );

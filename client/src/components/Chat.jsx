@@ -122,44 +122,45 @@ const Chat = ({ jobId, receiverId, onClose }) => {
                 <div ref={scrollRef} />
             </div>
 
-            {/* Input */}
-            <form onSubmit={sendMessage} style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
-                <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Type a message..."
-                    style={{
-                        flex: 1,
-                        background: 'var(--bg)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        padding: '0.7rem 1rem',
-                        borderRadius: '2rem',
-                        fontSize: '0.9rem',
-                        outline: 'none'
-                    }}
-                />
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    type="submit"
-                    style={{
-                        background: 'var(--text)',
-                        color: 'var(--bg)',
-                        border: 'none',
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.2rem'
-                    }}
-                >
-                    →
-                </motion.button>
+            {/* Input Area */}
+            <form onSubmit={sendMessage} style={{ padding: '1.2rem', borderTop: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', gap: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '0.4rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+                    <input
+                        type="text"
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        placeholder="Encrypted message..."
+                        style={{
+                            flex: 1,
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text)',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.9rem',
+                            outline: 'none'
+                        }}
+                    />
+                    <motion.button
+                        whileHover={{ scale: 1.05, background: 'var(--text)', color: 'var(--bg)' }}
+                        whileTap={{ scale: 0.95 }}
+                        type="submit"
+                        style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            color: 'var(--text)',
+                            border: 'none',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '0.8rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </motion.button>
+                </div>
             </form>
         </motion.div>
     );

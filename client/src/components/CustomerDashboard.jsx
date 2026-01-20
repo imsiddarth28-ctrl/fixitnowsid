@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import TechnicianList from './TechnicianList';
 import BookingHistory from './BookingHistory';
 
-const CustomerDashboard = () => {
+const CustomerDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
     const { user, logout } = useAuth();
     const [view, setView] = useState('services'); // services, wallet, history, support, reviews, profile
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -203,6 +203,49 @@ const CustomerDashboard = () => {
 
                 {/* View Content */}
                 <div style={{ width: '100%' }}>
+                    {/* Active Job Alert */}
+                    {activeJob && activeJob.status !== 'completed' && view === 'services' && (
+                        <motion.div
+                            initial={{ y: -20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            style={{
+                                marginBottom: '2rem',
+                                padding: '2rem',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                borderRadius: '1.5rem',
+                                color: 'white',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)'
+                            }}
+                        >
+                            <div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 900, opacity: 0.8, marginBottom: '0.5rem', letterSpacing: '0.1em' }}>ACTIVE JOB IN PROGRESS</div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '0 0 0.8rem 0' }}>{activeJob.serviceType}</h3>
+                                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                                    Status: <strong>{activeJob.status.toUpperCase().replace('_', ' ')}</strong>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setActiveTab('home')}
+                                style={{
+                                    padding: '1rem 2rem',
+                                    background: 'white',
+                                    color: '#3b82f6',
+                                    border: 'none',
+                                    borderRadius: '1rem',
+                                    fontWeight: 900,
+                                    cursor: 'pointer',
+                                    fontSize: '0.95rem',
+                                    boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                VIEW TRACKING
+                            </button>
+                        </motion.div>
+                    )}
+
                     {view === 'services' && (
                         <div className="animate-fade-in">
                             <TechnicianList onBookingSuccess={() => setView('history')} />
