@@ -181,18 +181,25 @@ const ProfileSettings = () => {
                                     </label>
                                     <input
                                         type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        value={user?.email || ''}
+                                        readOnly
+                                        disabled
                                         style={{
                                             width: '100%',
                                             padding: '0.75rem 1rem',
                                             borderRadius: '0.5rem',
                                             border: '1px solid var(--border)',
-                                            background: 'var(--card)',
-                                            color: 'var(--text)',
-                                            fontSize: '0.95rem'
+                                            background: 'rgba(128, 128, 128, 0.1)',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.95rem',
+                                            cursor: 'not-allowed',
+                                            opacity: 0.7
                                         }}
+                                        title="Email cannot be changed"
                                     />
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.3rem', fontStyle: 'italic' }}>
+                                        Email cannot be changed for security reasons
+                                    </div>
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
