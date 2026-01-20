@@ -20,6 +20,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
 import BookingHistory from './BookingHistory';
+import ProfileSettings from './ProfileSettings';
+import SupportHelp from './SupportHelp';
 
 const TechnicianDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
     const { user, logout } = useAuth();
@@ -108,7 +110,8 @@ const TechnicianDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
         { id: 'jobs', label: 'Active Missions', icon: <Briefcase size={20} />, count: activeMissions.length },
         { id: 'history', label: 'Ops Archives', icon: <History size={20} /> },
         { id: 'payments', label: 'Credit Ledger', icon: <CreditCard size={20} /> },
-        { id: 'settings', label: 'Neural Config', icon: <Settings size={20} /> },
+        { id: 'settings', label: 'Profile Settings', icon: <Settings size={20} /> },
+        { id: 'support', label: 'Support & Help', icon: <Bell size={20} /> },
     ];
 
     if (loading) return (
@@ -285,6 +288,21 @@ const TechnicianDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
                         </>
                     )}
                     {view === 'history' && <BookingHistory type="technician" />}
+                    {view === 'settings' && <ProfileSettings />}
+                    {view === 'support' && <SupportHelp />}
+                    {(view === 'payments' || view === 'jobs') && (
+                        <div style={{
+                            padding: '4rem 2rem',
+                            border: '1px dashed var(--border)',
+                            borderRadius: '1rem',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)'
+                        }}>
+                            <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🏗️</div>
+                            <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text)' }}>Coming Soon</div>
+                            <p style={{ fontSize: '0.9rem', margin: 0 }}>This feature is currently being optimized for your experience.</p>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

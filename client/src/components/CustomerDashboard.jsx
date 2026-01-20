@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import TechnicianList from './TechnicianList';
 import BookingHistory from './BookingHistory';
+import ProfileSettings from './ProfileSettings';
+import SupportHelp from './SupportHelp';
 
 const CustomerDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
     const { user, logout } = useAuth();
@@ -258,7 +260,19 @@ const CustomerDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
                         </div>
                     )}
 
-                    {(view === 'profile' || view === 'support' || view === 'wallet') && (
+                    {(view === 'profile') && (
+                        <div className="animate-fade-in">
+                            <ProfileSettings />
+                        </div>
+                    )}
+
+                    {(view === 'support') && (
+                        <div className="animate-fade-in">
+                            <SupportHelp />
+                        </div>
+                    )}
+
+                    {(view === 'wallet') && (
                         <div className="animate-fade-in" style={{
                             padding: '4rem 2rem',
                             border: '1px dashed var(--border)',
@@ -268,7 +282,7 @@ const CustomerDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
                         }}>
                             <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🏗️</div>
                             <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text)' }}>Coming Soon</div>
-                            <p style={{ fontSize: '0.9rem', margin: 0 }}>This specialized module is currently being optimized for your experience.</p>
+                            <p style={{ fontSize: '0.9rem', margin: 0 }}>Wallet feature is currently being optimized for your experience.</p>
                         </div>
                     )}
 
