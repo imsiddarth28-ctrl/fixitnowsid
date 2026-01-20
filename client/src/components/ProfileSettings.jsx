@@ -500,8 +500,39 @@ const ProfileSettings = () => {
                         </div>
                     )}
 
-                    {/* Save Button */}
+                    {/* Save/Cancel Buttons */}
                     <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                        <button
+                            onClick={() => {
+                                // Reset to original values
+                                setFormData({
+                                    name: user?.name || '',
+                                    email: user?.email || '',
+                                    phone: user?.phone || '',
+                                    address: user?.address || '',
+                                    bio: user?.bio || '',
+                                    profilePhoto: user?.profilePhoto || null,
+                                    notifications: formData.notifications,
+                                    privacy: formData.privacy
+                                });
+                                setProfilePhoto(user?.profilePhoto || null);
+                            }}
+                            style={{
+                                padding: '0.75rem 2rem',
+                                borderRadius: '0.75rem',
+                                border: '1px solid var(--border)',
+                                background: 'transparent',
+                                color: 'var(--text)',
+                                fontWeight: 800,
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = 'var(--card)'}
+                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                        >
+                            Cancel
+                        </button>
                         <button
                             onClick={handleSave}
                             disabled={saving}
