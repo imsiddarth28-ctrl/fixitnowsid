@@ -85,20 +85,100 @@ app.get('/api/chat/:jobId', async (req, res) => {
   }
 });
 
-// API: Update Location & Trigger Pusher
+// API: Update Technician Location & Trigger Real-time Updates
 app.post('/api/jobs/:jobId/location', async (req, res) => {
   try {
-    const { location } = req.body;
+    const { latitude, longitude } = req.body;
     const { jobId } = req.params;
 
-    // In a real app, we might update the job/technician location in DB here
-    await pusher.trigger(`job-${jobId}`, 'technician_location_update', { jobId, location });
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
 
-    res.json({ success: true });
+    // Update job with technician's current location
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Store technician location in job
+    job.technicianCurrentLocation = {
+      latitude,
+      longitude,
+      timestamp: new Date()
+    };
+    await job.save();
+
+    // Broadcast location update to all clients watching this job
+    await pusher.trigger(`job-${jobId}`, 'technician_location_update', {
+      jobId,
+      latitude,
+      longitude,
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({ success: true, location: { latitude, longitude } });
   } catch (err) {
+    console.error('Location update error:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
+// API: Cancel Job with Reason
+app.post('/api/jobs/:jobId/cancel', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { reason, reasonLabel, details, cancelledBy, cancelledAt } = req.body;
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Update job status and add cancellation data
+    job.status = 'cancelled';
+    job.cancellationData = {
+      reason,
+      reasonLabel,
+      details,
+      cancelledBy,
+      cancelledAt: cancelledAt || new Date().toISOString()
+    };
+    await job.save();
+
+    // Notify the other party via Pusher
+    await pusher.trigger(`job-${jobId}`, 'job_cancelled', {
+      jobId,
+      status: 'cancelled',
+      cancellationData: job.cancellationData,
+      message: `Job cancelled by ${cancelledBy}: ${reasonLabel}`
+    });
+
+    // Also notify user-specific channels
+    if (job.customerId) {
+      await pusher.trigger(`user-${job.customerId}`, 'job_cancelled', {
+        jobId,
+        message: 'Your job has been cancelled'
+      });
+    }
+    if (job.technicianId) {
+      await pusher.trigger(`user-${job.technicianId}`, 'job_cancelled', {
+        jobId,
+        message: 'Job has been cancelled'
+      });
+    }
+
+    res.json({
+      success: true,
+      job,
+      message: 'Job cancelled successfully'
+    });
+  } catch (err) {
+    console.error('Cancel job error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // API: Technician Discovery
 app.get('/api/technicians', async (req, res) => {

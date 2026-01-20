@@ -1,382 +1,401 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Zap, MapPin, Clock, TrendingUp, Activity, Bell,
+    Settings, LogOut, Search, Plus, ArrowRight,
+    CheckCircle, AlertCircle, Loader, User, MessageSquare,
+    Calendar, DollarSign, Star, Shield
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import TechnicianList from './TechnicianList';
 import BookingHistory from './BookingHistory';
 import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
+import UserAvatar from './UserAvatar';
+import API_URL from '../config';
 
-const CustomerDashboard = ({ activeJob, setActiveJob, setActiveTab }) => {
+const CustomerDashboard = () => {
     const { user, logout } = useAuth();
-    const [view, setView] = useState('services'); // services, wallet, history, support, reviews, profile
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeView, setActiveView] = useState('overview');
+    const [stats, setStats] = useState({
+        totalBookings: 0,
+        activeJobs: 0,
+        completedJobs: 0,
+        totalSpent: 0
+    });
+    const [recentActivity, setRecentActivity] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-    const menuItems = [
-        { id: 'services', label: 'Service Search' },
-        { id: 'history', label: 'Booking History' },
-        { id: 'profile', label: 'Profile Settings' },
-        { id: 'reviews', label: 'My Reviews' },
-        { id: 'support', label: 'Support & Help' }
-    ];
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-    const handleMenuClick = (id) => {
-        setView(id);
-        setMobileMenuOpen(false); // Close mobile menu after selection
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/customers/${user.id}/dashboard`);
+            if (res.ok) {
+                const data = await res.json();
+                setStats(data.stats || stats);
+                setRecentActivity(data.recentActivity || []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch dashboard data:', err);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const StatCard = ({ icon: Icon, label, value, trend, color }) => (
+        <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            style={{
+                background: 'rgba(15, 15, 15, 0.8)',
+                border: `1px solid ${color}40`,
+                borderRadius: '1rem',
+                padding: isMobile ? '1rem' : '1.5rem',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: `0 0 20px ${color}20`,
+                backdropFilter: 'blur(10px)'
+            }}
+        >
+            {/* CRT Scan Lines */}
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+                pointerEvents: 'none',
+                zIndex: 1
+            }} />
+
+            {/* Glow Effect */}
+            <div style={{
+                position: 'absolute',
+                top: '-50%',
+                right: '-50%',
+                width: '100%',
+                height: '100%',
+                background: `radial-gradient(circle, ${color}20 0%, transparent 70%)`,
+                pointerEvents: 'none'
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                    <div style={{
+                        width: isMobile ? '40px' : '48px',
+                        height: isMobile ? '40px' : '48px',
+                        borderRadius: '0.75rem',
+                        background: `${color}20`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `1px solid ${color}40`
+                    }}>
+                        <Icon size={isMobile ? 20 : 24} color={color} />
+                    </div>
+                    {trend && (
+                        <div style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '1rem',
+                            background: trend > 0 ? '#10b98120' : '#ef444420',
+                            border: `1px solid ${trend > 0 ? '#10b981' : '#ef4444'}40`,
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: trend > 0 ? '#10b981' : '#ef4444'
+                        }}>
+                            {trend > 0 ? '+' : ''}{trend}%
+                        </div>
+                    )}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+                    {label}
+                </div>
+                <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: 'white', fontFamily: 'monospace', textShadow: `0 0 10px ${color}80` }}>
+                    {value}
+                </div>
+            </div>
+        </motion.div>
+    );
+
+    const QuickAction = ({ icon: Icon, label, onClick, color }) => (
+        <motion.button
+            whileHover={{ scale: 1.05, boxShadow: `0 0 30px ${color}40` }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onClick}
+            style={{
+                background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
+                border: `1px solid ${color}40`,
+                borderRadius: '1rem',
+                padding: isMobile ? '1rem' : '1.25rem',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+        >
+            <div style={{
+                width: isMobile ? '48px' : '56px',
+                height: isMobile ? '48px' : '56px',
+                borderRadius: '50%',
+                background: `${color}30`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: `2px solid ${color}60`
+            }}>
+                <Icon size={isMobile ? 24 : 28} color={color} />
+            </div>
+            <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', fontWeight: 800, color: 'white', textAlign: 'center' }}>
+                {label}
+            </div>
+        </motion.button>
+    );
 
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'var(--bg)',
-            display: 'flex',
-            width: '100%',
-            position: 'relative'
+            background: '#000000',
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            {/* Mobile Menu Toggle */}
-            <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                style={{
-                    position: 'fixed',
-                    top: '1rem',
-                    left: '1rem',
-                    zIndex: 1001,
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem',
-                    cursor: 'pointer',
-                    fontSize: '1.5rem'
-                }}
-                className="mobile-menu-toggle"
-            >
-                {mobileMenuOpen ? '✕' : '☰'}
-            </button>
+            {/* Animated Background Grid */}
+            <div style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'linear-gradient(0deg, transparent 24%, rgba(59, 130, 246, 0.05) 25%, rgba(59, 130, 246, 0.05) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, 0.05) 75%, rgba(59, 130, 246, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(59, 130, 246, 0.05) 25%, rgba(59, 130, 246, 0.05) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, 0.05) 75%, rgba(59, 130, 246, 0.05) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px',
+                opacity: 0.3,
+                pointerEvents: 'none'
+            }} />
 
-            {/* Mobile Backdrop Overlay */}
-            {mobileMenuOpen && (
-                <div
-                    onClick={() => setMobileMenuOpen(false)}
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        zIndex: 9,
-                        backdropFilter: 'blur(2px)'
-                    }}
-                    className="mobile-backdrop"
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside className="customer-sidebar">
-                <div style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontWeight: 800,
-                    fontSize: '1.5rem',
-                    marginBottom: '3rem',
-                    letterSpacing: '-0.02em'
-                }}>
-                    FixItNow
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                    {menuItems.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => handleMenuClick(item.id)}
-                            style={{
-                                textAlign: 'left',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '0.5rem',
-                                border: 'none',
-                                background: view === item.id ? 'var(--text)' : 'transparent',
-                                color: view === item.id ? 'var(--bg)' : 'var(--text-muted)',
-                                fontSize: '0.95rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: 'var(--card)',
-                            border: '1px solid var(--border)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.9rem',
-                            fontWeight: 700
-                        }}>
-                            {user?.name?.charAt(0)}
-                        </div>
-                        <div style={{ overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {user?.name}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Customer</div>
-                        </div>
-                    </div>
-                    <button
-                        onClick={logout}
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid var(--border)',
-                            background: 'transparent',
-                            color: 'var(--text)',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'var(--card)'}
-                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                    >
-                        Sign Out
-                    </button>
-                </div>
-            </aside>
+            {/* CRT Vignette */}
+            <div style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'radial-gradient(circle, transparent 0%, rgba(0,0,0,0.8) 100%)',
+                pointerEvents: 'none'
+            }} />
 
             {/* Main Content */}
-            <main className="dashboard-main">
-                {/* Header Section */}
-                <header style={{
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Top Bar */}
+                <div style={{
+                    padding: isMobile ? '1rem' : '1.5rem 2rem',
+                    borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                    background: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(10px)',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '3.5rem',
-                    gap: '2rem'
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: isMobile ? 'wrap' : 'nowrap'
                 }}>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-                            DASHBOARD // {menuItems.find(m => m.id === view)?.label?.toUpperCase()}
-                        </div>
-                        <h1 style={{
-                            fontSize: '2.5rem',
-                            fontWeight: 900,
-                            fontFamily: 'var(--font-heading)',
-                            margin: 0,
-                            letterSpacing: '-0.03em'
-                        }}>
-                            Welcome, <span className="text-gradient">{user?.name?.split(' ')[0].toUpperCase()}</span>
-                        </h1>
-                    </div>
-
-                    {/* Smart Insights Panel */}
-                    <div className="desktop-only" style={{
-                        display: 'flex',
-                        gap: '1.5rem',
-                        background: 'rgba(255,255,255,0.02)',
-                        padding: '1.2rem 2rem',
-                        borderRadius: '1.2rem',
-                        border: '1px solid var(--border)',
-                        backdropFilter: 'blur(10px)'
-                    }}>
-                        <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1.5rem' }}>
-                            <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 900, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>HOME HEALTH INDEX</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'monospace' }}>94%</div>
-                                <div style={{ width: '40px', height: '4px', background: '#22c55e30', borderRadius: '2px', overflow: 'hidden' }}>
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: '94%' }}
-                                        style={{ height: '100%', background: '#22c55e' }}
-                                    />
-                                </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <UserAvatar size={isMobile ? 40 : 48} />
+                        <div>
+                            <div style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, textShadow: '0 0 10px #3b82f6' }}>
+                                {user?.name}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 700, letterSpacing: '0.1em' }}>
+                                CUSTOMER_ID: {user?.id?.slice(-6).toUpperCase()}
                             </div>
                         </div>
-                        <div style={{ paddingLeft: '0.5rem' }}>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, marginBottom: '0.4rem', letterSpacing: '0.1em' }}>AI PREDICTION</div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>AC SERVICE DUE IN 12 DAYS</div>
-                            <div style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 800 }}>⚡ OPTIMIZATION AVAILABLE</div>
-                        </div>
                     </div>
-                </header>
-
-                {/* View Content */}
-                <div style={{ width: '100%' }}>
-                    {/* Active Job Alert */}
-                    {activeJob && activeJob.status !== 'completed' && view === 'services' && (
-                        <motion.div
-                            initial={{ y: -20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                             style={{
-                                marginBottom: '2rem',
-                                padding: '2rem',
-                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                borderRadius: '1.5rem',
-                                color: 'white',
+                                width: isMobile ? '40px' : '44px',
+                                height: isMobile ? '40px' : '44px',
+                                borderRadius: '0.75rem',
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
                                 display: 'flex',
-                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)'
+                                justifyContent: 'center',
+                                cursor: 'pointer'
                             }}
                         >
-                            <div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 900, opacity: 0.8, marginBottom: '0.5rem', letterSpacing: '0.1em' }}>ACTIVE JOB IN PROGRESS</div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '0 0 0.8rem 0' }}>{activeJob.serviceType}</h3>
-                                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
-                                    Status: <strong>{activeJob.status.toUpperCase().replace('_', ' ')}</strong>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setActiveTab('home')}
+                            <Bell size={isMobile ? 18 : 20} color="#3b82f6" />
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={logout}
+                            style={{
+                                width: isMobile ? '40px' : '44px',
+                                height: isMobile ? '40px' : '44px',
+                                borderRadius: '0.75rem',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <LogOut size={isMobile ? 18 : 20} color="#ef4444" />
+                        </motion.button>
+                    </div>
+                </div>
+
+                {/* Navigation Tabs */}
+                <div style={{
+                    padding: isMobile ? '1rem' : '1rem 2rem',
+                    borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    overflowX: 'auto',
+                    display: 'flex',
+                    gap: '0.5rem'
+                }}>
+                    {[
+                        { id: 'overview', label: 'Overview', icon: Activity },
+                        { id: 'history', label: 'History', icon: Clock },
+                        { id: 'profile', label: 'Profile', icon: User },
+                        { id: 'support', label: 'Support', icon: Shield }
+                    ].map(tab => {
+                        const Icon = tab.icon;
+                        const isActive = activeView === tab.id;
+                        return (
+                            <motion.button
+                                key={tab.id}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setActiveView(tab.id)}
                                 style={{
-                                    padding: '1rem 2rem',
-                                    background: 'white',
-                                    color: '#3b82f6',
-                                    border: 'none',
-                                    borderRadius: '1rem',
-                                    fontWeight: 900,
+                                    padding: isMobile ? '0.6rem 1rem' : '0.75rem 1.5rem',
+                                    borderRadius: '0.75rem',
+                                    background: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                                    border: `1px solid ${isActive ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255,255,255,0.1)'}`,
+                                    color: isActive ? '#3b82f6' : 'rgba(255,255,255,0.6)',
+                                    fontWeight: 800,
+                                    fontSize: isMobile ? '0.8rem' : '0.9rem',
                                     cursor: 'pointer',
-                                    fontSize: '0.95rem',
-                                    boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: isActive ? '0 0 20px rgba(59, 130, 246, 0.3)' : 'none',
+                                    whiteSpace: 'nowrap'
                                 }}
                             >
-                                VIEW TRACKING
-                            </button>
-                        </motion.div>
-                    )}
-
-                    {view === 'services' && (
-                        <div className="animate-fade-in">
-                            <TechnicianList onBookingSuccess={() => setView('history')} />
-                        </div>
-                    )}
-
-                    {view === 'history' && (
-                        <div className="animate-fade-in">
-                            <BookingHistory />
-                        </div>
-                    )}
-
-                    {(view === 'profile') && (
-                        <div className="animate-fade-in">
-                            <ProfileSettings />
-                        </div>
-                    )}
-
-                    {(view === 'support') && (
-                        <div className="animate-fade-in">
-                            <SupportHelp />
-                        </div>
-                    )}
-
-                    {(view === 'wallet') && (
-                        <div className="animate-fade-in" style={{
-                            padding: '4rem 2rem',
-                            border: '1px dashed var(--border)',
-                            borderRadius: '1rem',
-                            textAlign: 'center',
-                            color: 'var(--text-muted)'
-                        }}>
-                            <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🏗️</div>
-                            <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text)' }}>Coming Soon</div>
-                            <p style={{ fontSize: '0.9rem', margin: 0 }}>Wallet feature is currently being optimized for your experience.</p>
-                        </div>
-                    )}
-
-                    {view === 'reviews' && (
-                        <div className="animate-fade-in" style={{
-                            padding: '4rem 2rem',
-                            border: '1px dashed var(--border)',
-                            borderRadius: '1rem',
-                            textAlign: 'center',
-                            color: 'var(--text-muted)'
-                        }}>
-                            <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text)' }}>No reviews yet</div>
-                            <p style={{ fontSize: '0.9rem', margin: 0 }}>Once you complete a service, you can rate your technician here.</p>
-                        </div>
-                    )}
+                                <Icon size={16} />
+                                {tab.label}
+                            </motion.button>
+                        );
+                    })}
                 </div>
-            </main>
 
-            <style>{`
-                .animate-fade-in {
-                    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
+                {/* Main Content Area */}
+                <div style={{ padding: isMobile ? '1rem' : '2rem' }}>
+                    <AnimatePresence mode="wait">
+                        {activeView === 'overview' && (
+                            <motion.div
+                                key="overview"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {/* Stats Grid */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+                                    gap: '1rem',
+                                    marginBottom: '2rem'
+                                }}>
+                                    <StatCard icon={Zap} label="ACTIVE JOBS" value={stats.activeJobs} trend={12} color="#3b82f6" />
+                                    <StatCard icon={CheckCircle} label="COMPLETED" value={stats.completedJobs} trend={8} color="#10b981" />
+                                    <StatCard icon={DollarSign} label="TOTAL SPENT" value={`$${stats.totalSpent}`} trend={-5} color="#f59e0b" />
+                                    <StatCard icon={Star} label="AVG RATING" value="4.8" trend={3} color="#8b5cf6" />
+                                </div>
 
-                /* Default: Desktop Styles (Base) */
-                .mobile-menu-toggle {
-                    display: none;
-                }
-                .mobile-backdrop {
-                    display: none;
-                }
-                .customer-sidebar {
-                    width: 280px;
-                    border-right: 1px solid var(--border);
-                    padding: 2rem 1.5rem;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100vh;
-                    position: fixed;
-                    left: 0;
-                    top: 0;
-                    z-index: 10;
-                    background: var(--bg);
-                    transform: translateX(0); /* Default visible */
-                }
-                .dashboard-main {
-                    flex: 1;
-                    margin-left: 280px; /* Space for sidebar */
-                    padding: 2rem 3rem;
-                    width: calc(100% - 280px);
-                }
+                                {/* Quick Actions */}
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, marginBottom: '1rem', textShadow: '0 0 10px #3b82f6' }}>
+                                        QUICK ACTIONS
+                                    </h3>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
+                                        gap: '1rem'
+                                    }}>
+                                        <QuickAction icon={Plus} label="New Booking" onClick={() => { }} color="#3b82f6" />
+                                        <QuickAction icon={MessageSquare} label="Messages" onClick={() => { }} color="#10b981" />
+                                        <QuickAction icon={Calendar} label="Schedule" onClick={() => { }} color="#f59e0b" />
+                                        <QuickAction icon={Settings} label="Settings" onClick={() => setActiveView('profile')} color="#8b5cf6" />
+                                    </div>
+                                </div>
 
-                /* Mobile Responsive Styles */
-                @media (max-width: 768px) {
-                    .mobile-menu-toggle {
-                        display: block !important;
-                    }
+                                {/* Recent Activity */}
+                                <div>
+                                    <h3 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, marginBottom: '1rem', textShadow: '0 0 10px #3b82f6' }}>
+                                        RECENT ACTIVITY
+                                    </h3>
+                                    <div style={{
+                                        background: 'rgba(15, 15, 15, 0.8)',
+                                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                                        borderRadius: '1rem',
+                                        padding: isMobile ? '1rem' : '1.5rem',
+                                        textAlign: 'center',
+                                        color: 'rgba(255,255,255,0.5)'
+                                    }}>
+                                        No recent activity
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
 
-                    .mobile-backdrop {
-                        display: block !important;
-                    }
+                        {activeView === 'history' && (
+                            <motion.div
+                                key="history"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <BookingHistory type="customer" />
+                            </motion.div>
+                        )}
 
-                    .desktop-only {
-                        display: none !important;
-                    }
+                        {activeView === 'profile' && (
+                            <motion.div
+                                key="profile"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <ProfileSettings />
+                            </motion.div>
+                        )}
 
-                    .customer-sidebar {
-                        transform: ${mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'};
-                        box-shadow: ${mobileMenuOpen ? '0 0 50px rgba(0,0,0,0.5)' : 'none'};
-                        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                        width: 280px; /* Fixed width sidebar on mobile too */
-                        z-index: 1000; /* Below toggle button (1001) */
-                    }
-                    /* Let's put sidebar above content but below toggle if toggle is inside sidebar? 
-                       Toggle is fixed at top-left. 
-                       If sidebar opens, it covers top-left.
-                       We want Toggle ('X') to be visible. Toggle z=1001. Sidebar z should be < 1001.
-                       Sidebar z=10. This is fine.
-                    */
-
-                    .dashboard-main {
-                        margin-left: 0 !important;
-                        padding: 5rem 1.5rem 2rem !important;
-                        width: 100%;
-                    }
-                }
-
-                @media (min-width: 769px) {
-                    /* Reinforce desktop rules if needed, but Base checks out */
-                }
-            `}</style>
+                        {activeView === 'support' && (
+                            <motion.div
+                                key="support"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <SupportHelp />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
         </div>
     );
 };

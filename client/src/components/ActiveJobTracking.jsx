@@ -4,12 +4,15 @@ import { Navigation, MapPin, Clock, Phone, MessageSquare, CheckCircle2, AlertCir
 import ServiceReceipt from './ServiceReceipt';
 import Chat from './Chat';
 import GoogleMap from './GoogleMap';
+import LocationTracker from './LocationTracker';
+import CancelJobModal from './CancelJobModal';
 import API_URL from '../config';
 
 const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [showReceipt, setShowReceipt] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     useEffect(() => {
         if (job) {
@@ -66,6 +69,39 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
         }
     };
 
+    const handleCancelJob = async (cancellationData) => {
+        try {
+            const res = await fetch(`${API_URL}/api/jobs/${job._id}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(cancellationData)
+            });
+
+            if (!res.ok) throw new Error('Failed to cancel job');
+
+            const result = await res.json();
+
+            // Close modal
+            setShowCancelModal(false);
+
+            // Notify parent component
+            onStatusUpdate({ ...job, status: 'cancelled', cancellationData });
+
+            // Show success message
+            alert(`Job cancelled successfully. ${user.role === 'customer' ? 'The technician has been notified.' : 'The customer has been notified.'}`);
+
+            // Go back to dashboard
+            if (onBack) {
+                setTimeout(() => onBack(), 1000);
+            }
+        } catch (err) {
+            console.error('Cancel job failed:', err);
+            alert('Failed to cancel job. Please try again.');
+        }
+    };
+
     return (
         <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Top Toolbar */}
@@ -97,9 +133,37 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     <div style={{ fontSize: '0.9rem', fontWeight: 700, opacity: 0.6 }}>JOB_ID: #{job._id.slice(-8).toUpperCase()}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button onClick={() => setShowChat(!showChat)} style={{ background: showChat ? 'var(--text)' : 'transparent', color: showChat ? 'var(--bg)' : 'var(--text)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '0.8rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button onClick={() => setShowChat(!showChat)} style={{ background: showChat ? 'var(--text)' : 'transparent', color: showChat ? 'var(--bg)' : 'var(--text)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '0.8rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s ease' }}>
                         <MessageSquare size={16} /> CHAT
                     </button>
+                    {job.status !== 'completed' && (
+                        <button
+                            onClick={() => setShowCancelModal(true)}
+                            style={{
+                                background: 'transparent',
+                                color: '#ef4444',
+                                border: '1px solid #ef4444',
+                                padding: '0.6rem 1.2rem',
+                                borderRadius: '0.8rem',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = '#ef4444';
+                                e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = 'transparent';
+                                e.target.style.color = '#ef4444';
+                            }}
+                        >
+                            <X size={16} /> CANCEL JOB
+                        </button>
+                    )}
                     {user.role === 'technician' && job.status === 'completed' && (
                         <button onClick={() => onStatusUpdate(null)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.8rem', cursor: 'pointer', fontWeight: 700 }}>
                             EXIT MISSION
@@ -109,13 +173,14 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
             </header>
 
             {/* Tracking Field */}
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex' }}>
-                {/* Main Content Area (Map + HUD) - Takes 3/4 when chat is open */}
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
+                {/* Main Content Area (Map + HUD) - Responsive layout */}
                 <div style={{
-                    flex: showChat ? 3 : 1,
+                    flex: showChat ? (window.innerWidth < 768 ? '0 0 50%' : 3) : 1,
                     position: 'relative',
                     display: 'flex',
-                    transition: 'flex 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                    transition: 'flex 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    minHeight: window.innerWidth < 768 ? '50%' : 'auto'
                 }}>
                     {/* HUD Overlay */}
                     <motion.div
@@ -123,13 +188,14 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                         animate={{ x: 0, opacity: 1 }}
                         style={{
                             position: 'absolute',
-                            top: '2rem',
-                            left: '2rem',
-                            width: showChat ? '280px' : '320px',
+                            top: window.innerWidth < 768 ? '1rem' : '2rem',
+                            left: window.innerWidth < 768 ? '1rem' : '2rem',
+                            width: window.innerWidth < 768 ? 'calc(100% - 2rem)' : (showChat ? '280px' : '320px'),
+                            maxWidth: window.innerWidth < 768 ? '100%' : '320px',
                             background: 'rgba(15, 15, 15, 0.95)',
                             backdropFilter: 'blur(10px)',
                             borderRadius: '1.5rem',
-                            padding: showChat ? '1.5rem' : '1.8rem',
+                            padding: window.innerWidth < 768 ? '1rem' : (showChat ? '1.5rem' : '1.8rem'),
                             border: '1px solid rgba(255,255,255,0.1)',
                             zIndex: 10,
                             boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
@@ -138,7 +204,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                         }}
                     >
                         <div style={{ fontSize: '0.6rem', color: '#3b82f6', fontWeight: 900, letterSpacing: '0.2em', marginBottom: '1rem' }}>MISSION_PROFILE</div>
-                        <h2 style={{ fontSize: showChat ? '1.2rem' : '1.4rem', fontWeight: 900, marginBottom: '1.5rem', letterSpacing: '-0.02em', transition: 'font-size 0.3s ease' }}>{job.serviceType?.toUpperCase()}</h2>
+                        <h2 style={{ fontSize: window.innerWidth < 768 ? '1rem' : (showChat ? '1.2rem' : '1.4rem'), fontWeight: 900, marginBottom: '1.5rem', letterSpacing: '-0.02em', transition: 'font-size 0.3s ease' }}>{job.serviceType?.toUpperCase()}</h2>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -179,19 +245,30 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     </div>
                 </div>
 
-                {/* Chat Sidebar - Takes 1/4 when open */}
+                {/* Chat Sidebar - Responsive */}
                 <AnimatePresence>
                     {showChat && (
                         <motion.div
-                            initial={{ width: 0, opacity: 0 }}
-                            animate={{ width: '25%', opacity: 1 }}
-                            exit={{ width: 0, opacity: 0 }}
+                            initial={{
+                                [window.innerWidth < 768 ? 'height' : 'width']: 0,
+                                opacity: 0
+                            }}
+                            animate={{
+                                [window.innerWidth < 768 ? 'height' : 'width']: window.innerWidth < 768 ? '50%' : '25%',
+                                opacity: 1
+                            }}
+                            exit={{
+                                [window.innerWidth < 768 ? 'height' : 'width']: 0,
+                                opacity: 0
+                            }}
                             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                             style={{
-                                minWidth: '300px',
-                                maxWidth: '400px',
+                                minWidth: window.innerWidth < 768 ? 'auto' : '300px',
+                                maxWidth: window.innerWidth < 768 ? '100%' : '400px',
+                                minHeight: window.innerWidth < 768 ? '50%' : 'auto',
                                 background: 'var(--card)',
-                                borderLeft: '1px solid var(--border)',
+                                borderLeft: window.innerWidth < 768 ? 'none' : '1px solid var(--border)',
+                                borderTop: window.innerWidth < 768 ? '1px solid var(--border)' : 'none',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 overflow: 'hidden'
@@ -246,6 +323,26 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
             <AnimatePresence>
                 {showReceipt && (
                     <ServiceReceipt job={job} onClose={() => setShowReceipt(false)} />
+                )}
+            </AnimatePresence>
+
+            {/* Location Tracker for Technicians */}
+            {user.role === 'technician' && job.status !== 'completed' && (
+                <LocationTracker
+                    jobId={job._id}
+                    isActive={job.status === 'in-progress' || job.status === 'accepted'}
+                />
+            )}
+
+            {/* Cancel Job Modal */}
+            <AnimatePresence>
+                {showCancelModal && (
+                    <CancelJobModal
+                        job={job}
+                        user={user}
+                        onCancel={handleCancelJob}
+                        onClose={() => setShowCancelModal(false)}
+                    />
                 )}
             </AnimatePresence>
         </div>
