@@ -8,12 +8,16 @@ const ProfileSettings = () => {
     const { user, updateUser } = useAuth();
     const [activeSection, setActiveSection] = useState('profile');
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || null);
+    const fileInputRef = useState(null);
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
         phone: user?.phone || '',
         address: user?.address || '',
         bio: user?.bio || '',
+        profilePhoto: user?.profilePhoto || null,
         notifications: {
             email: true,
             push: true,
@@ -26,6 +30,40 @@ const ProfileSettings = () => {
         }
     });
 
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            return;
+        }
+
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Image size should be less than 2MB');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result;
+                setProfilePhoto(base64String);
+                setFormData({ ...formData, profilePhoto: base64String });
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Upload failed:', err);
+            alert('Failed to upload image');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const sections = [
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -36,10 +74,22 @@ const ProfileSettings = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Update user context immediately for instant UI update
+            updateUser({
+                name: formData.name,
+                phone: formData.phone,
+                address: formData.address,
+                bio: formData.bio,
+                profilePhoto: profilePhoto || formData.profilePhoto
+            });
+
             const res = await fetch(`${API_URL}/api/users/${user.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    profilePhoto: profilePhoto || formData.profilePhoto
+                })
             });
             if (res.ok) {
                 const updated = await res.json();
@@ -115,41 +165,71 @@ const ProfileSettings = () => {
                             <div style={{ marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                                     <div style={{ position: 'relative' }}>
-                                        <div style={{
-                                            width: '100px',
-                                            height: '100px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '2.5rem',
-                                            fontWeight: 900,
-                                            color: 'white'
-                                        }}>
-                                            {user?.name?.charAt(0).toUpperCase()}
-                                        </div>
-                                        <button style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            right: 0,
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '50%',
-                                            background: 'var(--text)',
-                                            color: 'var(--bg)',
-                                            border: '2px solid var(--bg)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer'
-                                        }}>
-                                            <Camera size={16} />
-                                        </button>
+                                        {profilePhoto || user?.profilePhoto ? (
+                                            <img
+                                                src={profilePhoto || user?.profilePhoto}
+                                                alt="Profile"
+                                                style={{
+                                                    width: '100px',
+                                                    height: '100px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: '3px solid #3b82f6'
+                                                }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: '100px',
+                                                height: '100px',
+                                                borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '2.5rem',
+                                                fontWeight: 900,
+                                                color: 'white'
+                                            }}>
+                                                {user?.name?.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handlePhotoUpload}
+                                            style={{ display: 'none' }}
+                                            id="profile-photo-upload"
+                                        />
+                                        <label
+                                            htmlFor="profile-photo-upload"
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                right: 0,
+                                                width: '32px',
+                                                height: '32px',
+                                                borderRadius: '50%',
+                                                background: uploading ? '#6b7280' : 'var(--text)',
+                                                color: 'var(--bg)',
+                                                border: '2px solid var(--bg)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: uploading ? 'not-allowed' : 'pointer',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            {uploading ? '...' : <Camera size={16} />}
+                                        </label>
                                     </div>
                                     <div>
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.3rem' }}>{user?.name}</h3>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{user?.role === 'customer' ? 'Customer' : 'Technician'} Account</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                                            {user?.role === 'customer' ? 'Customer' : 'Technician'} Account
+                                        </p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                                            Click camera icon to upload photo (max 2MB)
+                                        </p>
                                     </div>
                                 </div>
                             </div>
