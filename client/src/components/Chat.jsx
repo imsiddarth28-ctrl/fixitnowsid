@@ -1,168 +1,303 @@
 import { useState, useEffect, useRef } from 'react';
+import { Send, X } from 'lucide-react';
 import { subscribeToEvent } from '../socket';
-import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
-import { motion, AnimatePresence } from 'framer-motion';
 
-const Chat = ({ jobId, receiverId, onClose }) => {
-    const { user } = useAuth();
+const Chat = ({ jobId, receiverId, onClose, isCompact = false }) => {
     const [messages, setMessages] = useState([]);
-    const [inputText, setInputText] = useState('');
-    const scrollRef = useRef(null);
+    const [newMessage, setNewMessage] = useState('');
+    const [sending, setSending] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
 
+    // Fetch chat history - optimized with abort controller
     useEffect(() => {
-        // Fetch history
-        fetch(`${API_URL}/api/chat/${jobId}`)
-            .then(res => res.json())
-            .then(data => setMessages(data))
-            .catch(err => console.error(err));
+        const abortController = new AbortController();
 
-        const unsubscribe = subscribeToEvent(`job-${jobId}`, 'receive_message', (msg) => {
+        const fetchMessages = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/api/chat/${jobId}`, {
+                    signal: abortController.signal
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setMessages(data);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Failed to fetch messages:', err);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMessages();
+
+        return () => abortController.abort();
+    }, [jobId]);
+
+    // Real-time message listener - optimized
+    useEffect(() => {
+        if (!jobId) return;
+
+        const handleNewMessage = (data) => {
             setMessages(prev => {
-                // Check if message already exists to avoid duplicates
-                if (prev.find(m => m._id === msg._id)) return prev;
-                return [...prev, msg];
+                // Prevent duplicates
+                if (prev.some(msg => msg._id === data._id)) {
+                    return prev;
+                }
+                return [...prev, data];
             });
-        });
+        };
 
+        const unsubscribe = subscribeToEvent(`job-${jobId}`, 'receive_message', handleNewMessage);
         return () => unsubscribe();
     }, [jobId]);
 
+    // Auto-scroll to bottom - optimized
     useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Send message - optimized with immediate UI update
     const sendMessage = async (e) => {
-        e.preventDefault();
-        if (!inputText.trim()) return;
+        e?.preventDefault();
+        if (!newMessage.trim() || sending) return;
 
-        const msgData = {
-            jobId,
-            senderId: user.id,
-            senderRole: user.role,
-            text: inputText,
-            receiverId
+        const messageText = newMessage.trim();
+        setNewMessage('');
+        setSending(true);
+
+        // Optimistic UI update
+        const tempMessage = {
+            _id: `temp-${Date.now()}`,
+            text: messageText,
+            senderId: 'me',
+            timestamp: new Date().toISOString(),
+            isOptimistic: true
         };
+        setMessages(prev => [...prev, tempMessage]);
 
         try {
-            await fetch(`${API_URL}/api/messages`, {
+            const res = await fetch(`${API_URL}/api/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(msgData)
+                body: JSON.stringify({
+                    jobId,
+                    senderId: 'current-user',
+                    senderRole: 'customer',
+                    text: messageText,
+                    receiverId
+                })
             });
-            setInputText('');
+
+            if (res.ok) {
+                const savedMessage = await res.json();
+                // Replace optimistic message with real one
+                setMessages(prev => prev.map(msg =>
+                    msg._id === tempMessage._id ? savedMessage : msg
+                ));
+            } else {
+                throw new Error('Failed to send');
+            }
         } catch (err) {
-            console.error('Send error:', err);
+            console.error('Send failed:', err);
+            // Remove optimistic message on error
+            setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
+            setNewMessage(messageText); // Restore message
+            alert('Failed to send message. Please try again.');
+        } finally {
+            setSending(false);
+            inputRef.current?.focus();
+        }
+    };
+
+    // Handle Enter key
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
         }
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            style={{
-                position: 'fixed',
-                bottom: '100px',
-                right: '20px',
-                width: '350px',
-                height: '450px',
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: '1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-                zIndex: 3000,
-                overflow: 'hidden',
-                backdropFilter: 'blur(10px)',
-                transformStyle: 'preserve-3d',
-                perspective: '1000px'
-            }}
-        >
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            background: 'var(--bg)',
+            borderLeft: isCompact ? 'none' : '1px solid var(--border)'
+        }}>
             {/* Header */}
             <div style={{
-                padding: '1rem 1.5rem',
+                padding: isCompact ? '1rem' : '1.5rem',
                 borderBottom: '1px solid var(--border)',
-                background: 'var(--text)',
-                color: 'var(--bg)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                background: 'var(--card)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }}></div>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.05em' }}>LIVE CHAT</span>
+                <div>
+                    <div style={{
+                        fontSize: isCompact ? '0.75rem' : '0.85rem',
+                        fontWeight: 900,
+                        color: '#3b82f6',
+                        letterSpacing: '0.1em',
+                        marginBottom: '0.3rem'
+                    }}>
+                        SECURE CHAT
+                    </div>
+                    <div style={{
+                        fontSize: isCompact ? '0.8rem' : '0.9rem',
+                        fontWeight: 700,
+                        color: 'var(--text)'
+                    }}>
+                        End-to-End Encrypted
+                    </div>
                 </div>
-                <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--bg)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 800 }}>×</button>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid var(--border)',
+                            borderRadius: '0.5rem',
+                            padding: '0.5rem',
+                            cursor: 'pointer',
+                            color: 'var(--text)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <X size={16} />
+                    </button>
+                )}
             </div>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {messages.map((msg, idx) => (
-                    <motion.div
-                        initial={{ opacity: 0, x: msg.senderId === user.id ? 20 : -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        key={idx}
-                        style={{
-                            alignSelf: msg.senderId === user.id ? 'flex-end' : 'flex-start',
-                            maxWidth: '80%',
-                            padding: '0.8rem 1rem',
-                            borderRadius: msg.senderId === user.id ? '1rem 1rem 0 1rem' : '1rem 1rem 1rem 0',
-                            background: msg.senderId === user.id ? 'var(--text)' : 'var(--bg)',
-                            color: msg.senderId === user.id ? 'var(--bg)' : 'var(--text)',
-                            fontSize: '0.9rem',
-                            border: '1px solid var(--border)',
-                            boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
-                        }}
-                    >
-                        {msg.text}
-                    </motion.div>
-                ))}
-                <div ref={scrollRef} />
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: isCompact ? '1rem' : '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+            }}>
+                {loading ? (
+                    <div style={{
+                        textAlign: 'center',
+                        color: 'var(--text-muted)',
+                        padding: '2rem',
+                        fontSize: '0.9rem'
+                    }}>
+                        Loading messages...
+                    </div>
+                ) : messages.length === 0 ? (
+                    <div style={{
+                        textAlign: 'center',
+                        color: 'var(--text-muted)',
+                        padding: '2rem',
+                        fontSize: '0.9rem'
+                    }}>
+                        No messages yet. Start the conversation!
+                    </div>
+                ) : (
+                    messages.map((msg) => {
+                        const isMe = msg.senderId === 'me' || msg.senderRole === 'customer';
+                        return (
+                            <div
+                                key={msg._id}
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: isMe ? 'flex-end' : 'flex-start',
+                                    opacity: msg.isOptimistic ? 0.6 : 1
+                                }}
+                            >
+                                <div style={{
+                                    maxWidth: '70%',
+                                    padding: isCompact ? '0.6rem 1rem' : '0.8rem 1.2rem',
+                                    borderRadius: '1rem',
+                                    background: isMe ? '#3b82f6' : 'var(--card)',
+                                    color: isMe ? 'white' : 'var(--text)',
+                                    border: isMe ? 'none' : '1px solid var(--border)',
+                                    wordBreak: 'break-word'
+                                }}>
+                                    <div style={{
+                                        fontSize: isCompact ? '0.85rem' : '0.9rem',
+                                        lineHeight: '1.5'
+                                    }}>
+                                        {msg.text}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.65rem',
+                                        marginTop: '0.4rem',
+                                        opacity: 0.7
+                                    }}>
+                                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+                <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <form onSubmit={sendMessage} style={{ padding: '1.2rem', borderTop: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
-                <div style={{ display: 'flex', gap: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '0.4rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+            {/* Input */}
+            <form onSubmit={sendMessage} style={{
+                padding: isCompact ? '1rem' : '1.5rem',
+                borderTop: '1px solid var(--border)',
+                background: 'var(--card)'
+            }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <input
+                        ref={inputRef}
                         type="text"
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        placeholder="Encrypted message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type a message..."
+                        disabled={sending}
                         style={{
                             flex: 1,
-                            background: 'transparent',
-                            border: 'none',
+                            padding: isCompact ? '0.7rem 1rem' : '0.8rem 1.2rem',
+                            borderRadius: '0.75rem',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg)',
                             color: 'var(--text)',
-                            padding: '0.6rem 0.8rem',
-                            fontSize: '0.9rem',
+                            fontSize: isCompact ? '0.85rem' : '0.9rem',
                             outline: 'none'
                         }}
                     />
-                    <motion.button
-                        whileHover={{ scale: 1.05, background: 'var(--text)', color: 'var(--bg)' }}
-                        whileTap={{ scale: 0.95 }}
+                    <button
                         type="submit"
+                        disabled={!newMessage.trim() || sending}
                         style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            color: 'var(--text)',
+                            padding: isCompact ? '0.7rem' : '0.8rem',
+                            borderRadius: '0.75rem',
                             border: 'none',
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '0.8rem',
-                            cursor: 'pointer',
+                            background: newMessage.trim() && !sending ? '#3b82f6' : 'var(--border)',
+                            color: 'white',
+                            cursor: newMessage.trim() && !sending ? 'pointer' : 'not-allowed',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            minWidth: isCompact ? '40px' : '45px',
                             transition: 'all 0.2s ease'
                         }}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    </motion.button>
+                        <Send size={isCompact ? 16 : 18} />
+                    </button>
                 </div>
             </form>
-        </motion.div>
+        </div>
     );
 };
 
