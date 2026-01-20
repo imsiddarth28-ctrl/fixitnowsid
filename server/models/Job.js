@@ -21,7 +21,19 @@ const jobSchema = new mongoose.Schema({
     isEmergency: { type: Boolean, default: false },
     isQueued: { type: Boolean, default: false },
     rating: Number,
-    review: String
+    review: String,
+    cancellationData: {
+        reason: String,
+        reasonLabel: String,
+        details: String,
+        cancelledBy: String,
+        cancelledAt: Date
+    },
+    technicianCurrentLocation: {
+        latitude: Number,
+        longitude: Number,
+        timestamp: Date
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Job', jobSchema);
