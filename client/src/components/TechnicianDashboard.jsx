@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import BookingHistory from './BookingHistory';
 import ProfileSettings from './ProfileSettings';
+import EarningsDashboard from './EarningsDashboard';
 import SupportHelp from './SupportHelp';
 import UserAvatar from './UserAvatar';
 import API_URL from '../config';
@@ -466,6 +467,12 @@ const TechnicianDashboard = () => {
                         {activeView === 'profile' && (
                             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                 <ProfileSettings />
+                            </motion.div>
+                        )}
+
+                        {activeView === 'wallet' && (
+                            <motion.div key="wallet" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <EarningsDashboard />
                             </motion.div>
                         )}
 
