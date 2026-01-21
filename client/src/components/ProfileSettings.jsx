@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, MapPin, Shield, Bell, Palette, Globe, Save, Camera, Edit2, ChevronRight, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,8 @@ const ProfileSettings = () => {
     const [activeSection, setActiveSection] = useState('profile');
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const isMobile = windowWidth < 1024;
     const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || null);
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -26,8 +28,16 @@ const ProfileSettings = () => {
             showPhone: true,
             showEmail: false,
             showLocation: true
-        }
+        },
+        experience: user?.experience || '',
+        serviceType: user?.serviceType || ''
     });
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handlePhotoUpload = async (e) => {
         const file = e.target.files[0];
@@ -78,7 +88,8 @@ const ProfileSettings = () => {
                 profilePhoto: profilePhoto || formData.profilePhoto
             });
 
-            const res = await fetch(`${API_URL}/api/users/${user.id}`, {
+            const endpoint = user.role === 'technician' ? `technician/${user.id}` : `user/${user.id}`;
+            const res = await fetch(`${API_URL}/api/auth/profile/${endpoint}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -87,8 +98,9 @@ const ProfileSettings = () => {
                 })
             });
             if (res.ok) {
-                const updated = await res.json();
-                updateUser(updated);
+                const data = await res.json();
+                const updatedUser = user.role === 'technician' ? data.technician : data.user;
+                updateUser({ ...updatedUser, id: user.id }); // Preserve id if needed
                 alert('SYNC_COMPLETE: Cloud identification ledger updated.');
             }
         } catch (err) {
@@ -131,12 +143,32 @@ const ProfileSettings = () => {
     );
 
     return (
-        <div style={{ display: 'flex', gap: '48px', alignItems: 'flex-start', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '24px' : '48px',
+            alignItems: 'flex-start',
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: isMobile ? '10px' : '0'
+        }}>
             {/* Sidebar Navigation */}
-            <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'sticky', top: '24px' }}>
-                <div style={{ marginBottom: '24px', paddingLeft: '20px' }}>
-                    <h3 style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)', letterSpacing: '0.2em' }}>COMMAND_MODULES</h3>
-                </div>
+            <div style={{
+                width: isMobile ? '100%' : '320px',
+                display: 'flex',
+                flexDirection: isMobile ? 'row' : 'column',
+                gap: '12px',
+                position: isMobile ? 'relative' : 'sticky',
+                top: isMobile ? '0' : '24px',
+                overflowX: isMobile ? 'auto' : 'visible',
+                paddingBottom: isMobile ? '12px' : '0',
+                scrollbarWidth: 'none'
+            }}>
+                {!isMobile && (
+                    <div style={{ marginBottom: '24px', paddingLeft: '20px' }}>
+                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)', letterSpacing: '0.2em' }}>COMMAND_MODULES</h3>
+                    </div>
+                )}
                 {sections.map(section => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -150,22 +182,23 @@ const ProfileSettings = () => {
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '20px',
-                                padding: '20px 24px',
-                                borderRadius: '24px',
+                                gap: isMobile ? '12px' : '20px',
+                                padding: isMobile ? '12px 16px' : '20px 24px',
+                                borderRadius: isMobile ? '16px' : '24px',
                                 border: '1px solid',
                                 borderColor: isActive ? 'var(--border)' : 'transparent',
                                 background: isActive ? 'var(--bg-secondary)' : 'transparent',
                                 color: isActive ? 'var(--text)' : 'var(--text-secondary)',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                textAlign: 'left'
+                                textAlign: 'left',
+                                whiteSpace: isMobile ? 'nowrap' : 'normal'
                             }}
                         >
                             <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '16px',
+                                width: isMobile ? '32px' : '48px',
+                                height: isMobile ? '32px' : '48px',
+                                borderRadius: isMobile ? '10px' : '16px',
                                 background: isActive ? 'var(--text)' : 'var(--bg-tertiary)',
                                 color: isActive ? 'var(--bg)' : 'var(--text-secondary)',
                                 display: 'flex',
@@ -173,11 +206,11 @@ const ProfileSettings = () => {
                                 justifyContent: 'center',
                                 transition: 'all 0.3s'
                             }}>
-                                <Icon size={22} />
+                                <Icon size={isMobile ? 16 : 22} />
                             </div>
                             <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '-0.01em' }}>{section.label}</div>
-                                <div style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.5, letterSpacing: '0.05em' }}>{section.desc}</div>
+                                <div style={{ fontWeight: '900', fontSize: isMobile ? '0.8rem' : '1rem', letterSpacing: '-0.01em' }}>{section.label}</div>
+                                {!isMobile && <div style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.5, letterSpacing: '0.05em' }}>{section.desc}</div>}
                             </div>
                         </motion.button>
                     );
@@ -185,7 +218,7 @@ const ProfileSettings = () => {
             </div>
 
             {/* Main Content Area */}
-            <div style={{ flex: 1, minHeight: '600px' }}>
+            <div style={{ width: '100%', flex: 1, minHeight: isMobile ? 'auto' : '600px' }}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeSection}
@@ -194,7 +227,7 @@ const ProfileSettings = () => {
                         exit={{ opacity: 0, scale: 0.98, y: -10 }}
                         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         className="bento-card glass"
-                        style={{ padding: '64px', borderRadius: '48px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+                        style={{ padding: isMobile ? '32px 20px' : '64px', borderRadius: isMobile ? '32px' : '48px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
                     >
                         {/* Profile Module */}
                         {activeSection === 'profile' && (
@@ -204,12 +237,12 @@ const ProfileSettings = () => {
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 10px var(--accent)' }} />
                                         <span style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em' }}>LEDGER_SYNC_READY</span>
                                     </div>
-                                    <h2 style={{ fontSize: '3rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.05em' }}>IDENTITY_CORE</h2>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>Manage your unit persona and encrypted identification metrics.</p>
+                                    <h2 style={{ fontSize: isMobile ? '1.75rem' : '3rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.05em' }}>IDENTITY_CORE</h2>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: '500' }}>Manage your unit persona and encrypted identification metrics.</p>
                                 </div>
 
                                 {/* Avatar Management */}
-                                <div style={{ marginBottom: '64px', display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                <div style={{ marginBottom: isMobile ? '40px' : '64px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '24px' : '40px' }}>
                                     <div style={{ position: 'relative' }}>
                                         <div style={{
                                             width: '140px',
@@ -296,7 +329,7 @@ const ProfileSettings = () => {
                                 </div>
 
                                 {/* Secure Input Fields */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '20px' : '32px' }}>
                                     <div className="input-group">
                                         <label className="input-label">UNIT_NAME_MANIFEST</label>
                                         <div style={{ position: 'relative' }}>
@@ -351,17 +384,45 @@ const ProfileSettings = () => {
                                 </div>
 
                                 {user?.role === 'technician' && (
-                                    <div className="input-group" style={{ marginTop: '32px' }}>
-                                        <label className="input-label">OPERATIONAL_MANIFESTO</label>
-                                        <textarea
-                                            value={formData.bio}
-                                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                            className="input"
-                                            rows={5}
-                                            placeholder="DECLARE_UNIT_CAPABILITIES_FOR_THE_NETWORK..."
-                                            style={{ minHeight: '160px', padding: '24px', resize: 'none', background: 'var(--bg)', borderRadius: '24px' }}
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="input-group">
+                                            <label className="input-label">EXPERIENCE_LOG_LENGTH</label>
+                                            <input
+                                                type="text"
+                                                value={formData.experience}
+                                                onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                                                placeholder="e.g. 5+ Years"
+                                                className="input"
+                                                style={{ background: 'var(--bg)', borderRadius: '20px' }}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">MISSION_SPECIALIZATION</label>
+                                            <select
+                                                value={formData.serviceType}
+                                                onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
+                                                className="input"
+                                                style={{ background: 'var(--bg)', borderRadius: '20px' }}
+                                            >
+                                                <option value="Plumber">Plumber</option>
+                                                <option value="Electrician">Electrician</option>
+                                                <option value="Cleaning">Cleaning</option>
+                                                <option value="Carpenter">Carpenter</option>
+                                                <option value="HVAC">HVAC</option>
+                                            </select>
+                                        </div>
+                                        <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                            <label className="input-label">OPERATIONAL_MANIFESTO</label>
+                                            <textarea
+                                                value={formData.bio}
+                                                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                                className="input"
+                                                rows={5}
+                                                placeholder="DECLARE_UNIT_CAPABILITIES_FOR_THE_NETWORK..."
+                                                style={{ minHeight: '160px', padding: '24px', resize: 'none', background: 'var(--bg)', borderRadius: '24px' }}
+                                            />
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -469,7 +530,7 @@ const ProfileSettings = () => {
 
                         {/* Final Sync Action Bar */}
                         {activeSection !== 'appearance' && (
-                            <div style={{ marginTop: '64px', display: 'flex', gap: '20px', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '48px' }}>
+                            <div style={{ marginTop: '64px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '48px' }}>
                                 <button
                                     onClick={() => {
                                         setFormData({

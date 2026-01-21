@@ -18,8 +18,8 @@ const Chat = ({ jobId, otherUser, isCompact = false }) => {
             cluster: import.meta.env.VITE_PUSHER_CLUSTER,
         });
 
-        const channel = pusher.subscribe(`chat-${jobId}`);
-        channel.bind('new-message', (data) => {
+        const channel = pusher.subscribe(`job-${jobId}`);
+        channel.bind('receive_message', (data) => {
             if (data.senderId !== user.id) {
                 setMessages(prev => [...prev, data]);
             }
@@ -37,7 +37,7 @@ const Chat = ({ jobId, otherUser, isCompact = false }) => {
 
     const fetchMessages = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/messages?jobId=${jobId}`);
+            const res = await fetch(`${API_URL}/api/chat/${jobId}`);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);

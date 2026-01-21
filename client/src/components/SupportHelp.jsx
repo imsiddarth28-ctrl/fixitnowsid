@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageCircle, HelpCircle, Book, Phone, Mail, Search, ChevronRight, ExternalLink, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,6 +14,14 @@ const SupportHelp = () => {
         priority: 'normal'
     });
     const [sending, setSending] = useState(false);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const isMobile = windowWidth < 768;
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const sections = [
         { id: 'faq', label: 'NEURAL_ANSWERS', icon: HelpCircle },
@@ -102,64 +110,64 @@ const SupportHelp = () => {
     })).filter(category => category.questions.length > 0);
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '4rem' }}>
+        <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px' : '0' }}>
+            <div style={{ marginBottom: isMobile ? '2rem' : '4rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'var(--accent)' }}>
                     <Shield size={20} />
                     <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>NEURAL_HUB_ACTIVE</span>
                 </div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '-0.04em', marginBottom: '12px' }}>SUPPORT_AND_MAINTENANCE</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>Access system knowledge or establish a direct uplink with command.</p>
+                <h1 style={{ fontSize: isMobile ? '2rem' : '3.5rem', fontWeight: '900', letterSpacing: '-0.04em', marginBottom: '12px', lineHeight: 1 }}>SUPPORT_AND_MAINTENANCE</h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: '500' }}>Access system knowledge or establish a direct uplink with command.</p>
             </div>
 
             {/* Quick Actions Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '4rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: isMobile ? '2rem' : '4rem' }}>
                 <motion.div
-                    whileHover={{ y: -8 }}
+                    whileHover={!isMobile ? { y: -8 } : {}}
                     onClick={() => setActiveSection('contact')}
                     className="bento-card"
                     style={{
-                        padding: '32px',
+                        padding: isMobile ? '24px' : '32px',
                         background: 'var(--text)',
                         color: 'var(--bg)',
                         cursor: 'pointer',
-                        borderRadius: '32px',
+                        borderRadius: '24px',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
                     }}
                 >
-                    <MessageCircle size={40} style={{ marginBottom: '24px' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>LIVE_UPLINK</h3>
-                    <p style={{ fontSize: '0.9rem', fontWeight: '600', opacity: 0.8 }}>Direct communication with tactical support.</p>
+                    <MessageCircle size={isMobile ? 32 : 40} style={{ marginBottom: '16px' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '8px' }}>LIVE_UPLINK</h3>
+                    <p style={{ fontSize: '0.85rem', fontWeight: '600', opacity: 0.8 }}>Direct communication with tactical support.</p>
                 </motion.div>
 
                 <motion.div
-                    whileHover={{ y: -8 }}
+                    whileHover={!isMobile ? { y: -8 } : {}}
                     className="bento-card glass"
                     style={{
-                        padding: '32px',
+                        padding: isMobile ? '24px' : '32px',
                         background: 'var(--bg-secondary)',
                         border: '1px solid var(--border)',
-                        borderRadius: '32px'
+                        borderRadius: '24px'
                     }}
                 >
-                    <Phone size={40} style={{ marginBottom: '24px', color: 'var(--text)' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>VOICE_CHANNEL</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '600' }}>+1 (800) FIX-IT-NOW</p>
+                    <Phone size={isMobile ? 32 : 40} style={{ marginBottom: '16px', color: 'var(--text)' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '8px' }}>VOICE_CHANNEL</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>+1 (800) FIX-IT-NOW</p>
                 </motion.div>
 
                 <motion.div
-                    whileHover={{ y: -8 }}
+                    whileHover={!isMobile ? { y: -8 } : {}}
                     className="bento-card glass"
                     style={{
-                        padding: '32px',
+                        padding: isMobile ? '24px' : '32px',
                         background: 'var(--bg-secondary)',
                         border: '1px solid var(--border)',
-                        borderRadius: '32px'
+                        borderRadius: '24px'
                     }}
                 >
-                    <Mail size={40} style={{ marginBottom: '24px', color: 'var(--text)' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>ENCRYPTED_MAIL</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '600' }}>support@fixitnow.com</p>
+                    <Mail size={isMobile ? 32 : 40} style={{ marginBottom: '16px', color: 'var(--text)' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '8px' }}>ENCRYPTED_MAIL</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>support@fixitnow.com</p>
                 </motion.div>
             </div>
 
@@ -167,12 +175,14 @@ const SupportHelp = () => {
             <div style={{
                 display: 'flex',
                 gap: '8px',
-                marginBottom: '40px',
-                padding: '8px',
+                marginBottom: '32px',
+                padding: '6px',
                 background: 'var(--bg-secondary)',
-                borderRadius: '20px',
-                width: 'fit-content',
-                border: '1px solid var(--border)'
+                borderRadius: '16px',
+                width: isMobile ? '100%' : 'fit-content',
+                overflowX: isMobile ? 'auto' : 'visible',
+                border: '1px solid var(--border)',
+                scrollbarWidth: 'none'
             }}>
                 {sections.map(section => {
                     const Icon = section.icon;
@@ -217,8 +227,8 @@ const SupportHelp = () => {
                     {/* FAQ Area */}
                     {activeSection === 'faq' && (
                         <div>
-                            <div style={{ marginBottom: '48px', position: 'relative' }}>
-                                <Search size={24} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                            <div style={{ marginBottom: '32px', position: 'relative' }}>
+                                <Search size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', opacity: 0.5 }} />
                                 <input
                                     type="text"
                                     placeholder="SEARCH_SYSTEM_KNOWLEDGE..."
@@ -227,11 +237,11 @@ const SupportHelp = () => {
                                     className="input glass"
                                     style={{
                                         width: '100%',
-                                        padding: '24px 24px 24px 64px',
-                                        fontSize: '1.1rem',
+                                        padding: isMobile ? '18px 18px 18px 52px' : '24px 24px 24px 64px',
+                                        fontSize: isMobile ? '0.9rem' : '1.1rem',
                                         fontWeight: '600',
                                         background: 'var(--bg-secondary)',
-                                        borderRadius: '24px'
+                                        borderRadius: '18px'
                                     }}
                                 />
                             </div>
@@ -312,14 +322,14 @@ const SupportHelp = () => {
 
                     {/* Contact Form Area */}
                     {activeSection === 'contact' && (
-                        <div className="bento-card glass" style={{ maxWidth: '800px', margin: '0 auto', padding: '48px', borderRadius: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-                            <h3 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.02em' }}>INITIATE_UPLINK</h3>
+                        <div className="bento-card glass" style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '32px 20px' : '48px', borderRadius: isMobile ? '32px' : '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.02em' }}>INITIATE_UPLINK</h3>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontWeight: '500' }}>
                                 Deploy a secure communication channel to FixItNow command center.
                             </p>
 
                             <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
                                     <div className="input-group">
                                         <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '12px', letterSpacing: '0.1em' }}>MODULE_SUBJECT</label>
                                         <input
@@ -329,7 +339,7 @@ const SupportHelp = () => {
                                             onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                                             placeholder="NATURE_OF_INQUIRY..."
                                             className="input"
-                                            style={{ background: 'var(--bg)', borderRadius: '16px', padding: '16px 20px' }}
+                                            style={{ background: 'var(--bg)', borderRadius: '14px', padding: '14px 18px' }}
                                         />
                                     </div>
                                     <div className="input-group">
@@ -338,7 +348,7 @@ const SupportHelp = () => {
                                             value={contactForm.priority}
                                             onChange={(e) => setContactForm({ ...contactForm, priority: e.target.value })}
                                             className="input"
-                                            style={{ background: 'var(--bg)', borderRadius: '16px', padding: '16px 20px' }}
+                                            style={{ background: 'var(--bg)', borderRadius: '14px', padding: '14px 18px' }}
                                         >
                                             <option value="low">ROUTINE_INQUIRY</option>
                                             <option value="normal">STANDARD_ASSISTANCE</option>

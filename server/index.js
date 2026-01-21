@@ -101,6 +101,21 @@ app.get('/api/chat/:jobId', async (req, res) => {
   }
 });
 
+// API: Support Contact Uplink
+app.post('/api/support/contact', async (req, res) => {
+  try {
+    const { userId, subject, message, priority } = req.body;
+    // Log the support request (ledger entry)
+    console.log(`[SUPPORT_UPLINK] Priority: ${priority.toUpperCase()} | Subject: ${subject}`);
+
+    // In a production environment, this would save to a Support collection or send an email
+    // For now, we acknowledge receipt on the secure channel
+    res.status(200).json({ success: true, message: 'COMMUNICATION_ESTABLISHED' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // API: Update Technician Location & Trigger Real-time Updates
 app.post('/api/jobs/:jobId/location', async (req, res) => {
   try {
