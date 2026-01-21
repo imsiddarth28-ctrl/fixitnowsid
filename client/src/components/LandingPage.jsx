@@ -37,7 +37,7 @@ const LandingPage = ({ onFindTechnician, onJoinPro }) => {
         <div style={{ background: 'var(--bg)', color: 'var(--text)', transition: 'all 0.3s ease' }}>
             {/* Hero Section */}
             <section style={{
-                padding: '120px 0 80px',
+                padding: 'calc(var(--container-padding) * 2) 0',
                 textAlign: 'center',
                 maxWidth: '1200px',
                 margin: '0 auto'

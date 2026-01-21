@@ -209,7 +209,7 @@ const TechnicianDashboard = () => {
             }}>
                 {/* Header */}
                 <header style={{
-                    padding: '24px 40px',
+                    padding: 'var(--container-padding)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -242,7 +242,7 @@ const TechnicianDashboard = () => {
                     </div>
                 </header>
 
-                <div style={{ padding: '40px', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
+                <div style={{ padding: 'var(--container-padding)', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
                     <AnimatePresence mode="wait">
                         {activeView === 'overview' && (
                             <motion.div
@@ -258,7 +258,7 @@ const TechnicianDashboard = () => {
                                     <p style={{ color: 'var(--text-secondary)' }}>You have {stats.pendingRequests} new service requests waiting for your review.</p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '48px' }}>
+                                <div style={{ display: 'flex', gap: 'var(--gap)', flexWrap: 'wrap', marginBottom: 'var(--container-padding)' }}>
                                     <StatCard label="Live Jobs" value={stats.activeJobs} icon={Briefcase} trend="ACTIVE" />
                                     <StatCard label="Finished Today" value={stats.completedToday} icon={CheckCircle} trend="+1" />
                                     <StatCard label="Total Earnings" value={`$${stats.totalEarnings}`} icon={DollarSign} trend="+15%" />

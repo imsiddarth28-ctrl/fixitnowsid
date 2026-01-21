@@ -228,7 +228,7 @@ const AdminDashboard = () => {
             }}>
                 {/* Header */}
                 <header style={{
-                    padding: '24px 40px',
+                    padding: 'var(--container-padding)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                <div style={{ padding: '40px', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
+                <div style={{ padding: 'var(--container-padding)', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
                     <motion.div
                         key={view}
                         initial={{ opacity: 0, y: 10 }}
@@ -272,7 +272,7 @@ const AdminDashboard = () => {
                         transition={{ duration: 0.3 }}
                     >
                         {/* Summary Section */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--gap)', marginBottom: 'var(--container-padding)' }}>
                             <div className="bento-card">
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Volume</div>
                                 <div style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.03em' }}>${stats.totalEarnings.toFixed(2)}</div>

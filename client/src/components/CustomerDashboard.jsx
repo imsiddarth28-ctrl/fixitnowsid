@@ -99,7 +99,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
     };
 
     const StatCard = ({ label, value, icon: Icon, trend }) => (
-        <div className="bento-card glass" style={{ flex: 1, minWidth: '280px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+        <div className="bento-card glass" style={{ flex: '1 1 240px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <div style={{
                     width: '48px', height: '48px', background: 'var(--text)',
@@ -293,7 +293,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
             }}>
                 {/* Header */}
                 <header style={{
-                    padding: '32px 48px',
+                    padding: 'var(--container-padding)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -328,7 +328,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                     </div>
                 </header>
 
-                <div className="container" style={{ padding: '32px' }}>
+                <div className="container" style={{ padding: 'var(--container-padding)' }}>
                     <AnimatePresence mode="wait">
                         {activeView === 'overview' && (
                             <motion.div
@@ -349,7 +349,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: '500' }}>Neural interface active. All systems reporting functional status.</p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '64px' }}>
+                                <div style={{ display: 'flex', gap: 'var(--gap)', flexWrap: 'wrap', marginBottom: 'var(--container-padding)' }}>
                                     <StatCard
                                         label="Live Tracking"
                                         value={stats.activeJobs}

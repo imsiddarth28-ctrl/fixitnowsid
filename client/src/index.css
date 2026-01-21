@@ -28,6 +28,8 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-full: 9999px;
+  --container-padding: 40px;
+  --gap: 1.5rem;
 }
 
 .dark {
@@ -62,20 +64,22 @@ body {
 }
 
 h1 {
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
 }
 
 h2 {
-  font-size: 2.25rem;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
 }
 
 h3 {
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
 }
 
 h4 {
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
 }
+
 
 /* Scrollbar */
 ::-webkit-scrollbar {
@@ -108,13 +112,13 @@ h4 {
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 var(--container-padding);
 }
 
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 1.5rem;
+  gap: var(--gap);
 }
 
 .bento-card {
@@ -277,16 +281,40 @@ h4 {
 /* Responsive */
 @media (max-width: 1024px) {
   .bento-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .desktop-only {
+    display: none !important;
   }
 }
 
 @media (max-width: 768px) {
+  :root {
+    --container-padding: 16px;
+    --gap: 1rem;
+  }
+
   .bento-grid {
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .container {
     padding: 0 1rem;
   }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.flex-responsive>* {
+  flex: 1 1 300px;
 }
