@@ -134,7 +134,12 @@ const MainApp = () => {
       <div style={{ background: 'var(--bg)', minHeight: '100vh', width: '100%' }}>
         {activeTab === 'home' ? (
           activeJob ? (
-            <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
+            <ActiveJobTracking
+              job={activeJob}
+              user={user}
+              onStatusUpdate={setActiveJob}
+              onBack={() => setActiveTab('dashboard')}
+            />
           ) : (
             <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
           )

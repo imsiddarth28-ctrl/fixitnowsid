@@ -146,7 +146,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
         }}>
             {/* Mission Header */}
             <header className="glass" style={{
-                padding: '24px 40px',
+                padding: isMobile ? '16px' : '24px 40px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -226,7 +226,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     zIndex: 10,
-                    padding: '40px'
+                    padding: isMobile ? '24px' : '40px'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '48px' }}>
                         <div style={{
@@ -384,21 +384,23 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     {/* Floating HUD Elements */}
                     <div style={{
                         position: 'absolute',
-                        top: '32px',
-                        left: '32px',
+                        top: isMobile ? '16px' : '32px',
+                        left: isMobile ? '16px' : '32px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
-                        zIndex: 100
+                        zIndex: 100,
+                        maxWidth: 'calc(100% - 32px)'
                     }}>
                         <div className="glass" style={{
-                            padding: '16px 24px',
+                            padding: '12px 16px',
                             borderRadius: '20px',
                             border: '1px solid var(--border)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
+                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
+                            width: 'fit-content'
                         }}>
                             <div style={{ position: 'relative', width: '10px', height: '10px' }}>
                                 <motion.div
@@ -408,32 +410,34 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                                 />
                                 <div style={{ position: 'absolute', inset: '1px', borderRadius: '50%', background: 'var(--success)', border: '2px solid white' }} />
                             </div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID_ACTIVE</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID</span>
                         </div>
 
-                        <div className="glass" style={{
-                            padding: '16px 24px',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border)',
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '24px',
-                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
-                            minWidth: '340px'
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>SIGNAL</div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--success)' }}>OPTIMAL</div>
+                        {!isMobile && (
+                            <div className="glass" style={{
+                                padding: '16px 24px',
+                                borderRadius: '20px',
+                                border: '1px solid var(--border)',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '24px',
+                                boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
+                                minWidth: '340px'
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>SIGNAL</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--success)' }}>OPTIMAL</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>ENCRYPTION</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>AES-256</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>LATENCY</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>24ms</div>
+                                </div>
                             </div>
-                            <div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>ENCRYPTION</div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>AES-256</div>
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>LATENCY</div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>24ms</div>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Chat Slide-over */}
