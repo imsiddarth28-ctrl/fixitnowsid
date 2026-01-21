@@ -30,45 +30,70 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
 
     // Handle Map Initialization
     useEffect(() => {
-        if (step === 2 && window.google && !mapInstance) {
-            const mapDiv = document.getElementById('booking-map');
-            if (mapDiv) {
-                const initialPos = { lat: bookingData.location.latitude || 17.3850, lng: bookingData.location.longitude || 78.4867 };
-                const map = new window.google.maps.Map(mapDiv, {
-                    center: initialPos,
-                    zoom: 15,
-                    styles: [
-                        { elementType: "geometry", stylers: [{ color: "#212121" }] },
-                        { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
-                        { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] }
-                    ],
-                    disableDefaultUI: true,
-                    zoomControl: true
-                });
+        if (step === 2 && window.google) {
+            if (!mapInstance) {
+                const mapDiv = document.getElementById('booking-map');
+                if (mapDiv) {
+                    const initialPos = { lat: bookingData.location.latitude || 17.3850, lng: bookingData.location.longitude || 78.4867 };
+                    const map = new window.google.maps.Map(mapDiv, {
+                        center: initialPos,
+                        zoom: 15,
+                        styles: [
+                            { elementType: "geometry", stylers: [{ color: "#212121" }] },
+                            { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
+                            { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] }
+                        ],
+                        disableDefaultUI: true,
+                        zoomControl: true
+                    });
 
-                const marker = new window.google.maps.Marker({
-                    position: initialPos,
-                    map: map,
-                    draggable: true,
-                    animation: window.google.maps.Animation.DROP
-                });
+                    const marker = new window.google.maps.Marker({
+                        position: initialPos,
+                        map: map,
+                        draggable: true,
+                        animation: window.google.maps.Animation.DROP
+                    });
 
-                setMapInstance(map);
-                setMarkerInstance(marker);
+                    setMapInstance(map);
+                    setMarkerInstance(marker);
 
-                marker.addListener('dragend', () => {
-                    const pos = marker.getPosition();
-                    const lat = pos.lat();
-                    const lng = pos.lng();
-                    updateLocation(lat, lng);
-                });
+                    marker.addListener('dragend', () => {
+                        const pos = marker.getPosition();
+                        updateLocation(pos.lat(), pos.lng());
+                    });
 
-                map.addListener('click', (e) => {
-                    const lat = e.latLng.lat();
-                    const lng = e.latLng.lng();
-                    marker.setPosition({ lat, lng });
-                    updateLocation(lat, lng);
-                });
+                    map.addListener('click', (e) => {
+                        marker.setPosition(e.latLng);
+                        updateLocation(e.latLng.lat(), e.latLng.lng());
+                    });
+
+                    // Initialize Autocomplete
+                    const input = document.getElementById('address-input');
+                    if (input) {
+                        const autocomplete = new window.google.maps.places.Autocomplete(input);
+                        autocomplete.addListener('place_changed', () => {
+                            const place = autocomplete.getPlace();
+                            if (place.geometry) {
+                                map.setCenter(place.geometry.location);
+                                marker.setPosition(place.geometry.location);
+                                setBookingData(prev => ({
+                                    ...prev,
+                                    location: {
+                                        address: place.formatted_address,
+                                        latitude: place.geometry.location.lat(),
+                                        longitude: place.geometry.location.lng()
+                                    }
+                                }));
+                                setAddressSearch(place.formatted_address);
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Auto-detect location on step 2 start if empty
+            if (!bookingData.location.address) {
+                handleDetectLocation();
             }
         }
     }, [step]);
@@ -89,6 +114,14 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                         location: { ...prev.location, address: results[0].formatted_address }
                     }));
                     setAddressSearch(results[0].formatted_address);
+                } else {
+                    // Fallback to coordinates as address if geocoding fails
+                    const coordAddr = `Coordinate Lock: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    setBookingData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, address: coordAddr }
+                    }));
+                    setAddressSearch(coordAddr);
                 }
             });
         }
@@ -347,6 +380,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                     <div className="glass" style={{ flex: 1, padding: '12px', borderRadius: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
                                         <MapPin size={20} style={{ marginTop: '4px', opacity: 0.5 }} />
                                         <input
+                                            id="address-input"
                                             type="text"
                                             placeholder="Enter mission address..."
                                             value={addressSearch}
@@ -365,20 +399,32 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'center' }}>
                                     Drag the marker to pinpoint your exact mission coordinates.
                                 </div>
-                                {bookingData.location.address && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                                    {bookingData.location.address && (
                                         <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '0.85rem', fontWeight: '700' }}>
                                             📍 {bookingData.location.address}
                                         </div>
-                                        <button
-                                            onClick={() => setStep(3)}
-                                            className="btn btn-primary"
-                                            style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: '800' }}
-                                        >
-                                            ESTABLISH PERIMETER
-                                        </button>
-                                    </div>
-                                )}
+                                    )}
+                                    <button
+                                        onClick={async () => {
+                                            if (!bookingData.location.address && addressSearch) {
+                                                handleSearchAddress();
+                                                // Wait 500ms for geocode to potentially finish
+                                                setTimeout(() => {
+                                                    if (bookingData.location.address) setStep(3);
+                                                }, 500);
+                                            } else if (bookingData.location.address) {
+                                                setStep(3);
+                                            } else {
+                                                setMapError('Please pinpoint a location on the map or search for an address.');
+                                            }
+                                        }}
+                                        className="btn btn-primary"
+                                        style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: '800' }}
+                                    >
+                                        ESTABLISH PERIMETER
+                                    </button>
+                                </div>
                             </motion.div>
                         )}
 
