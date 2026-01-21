@@ -153,7 +153,7 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
+        <div style={{ minHeight: '100vh', width: '100%', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
             {/* Sidebar */}
             <AnimatePresence>
                 {isSidebarOpen && (
@@ -224,7 +224,7 @@ const AdminDashboard = () => {
                 flex: 1,
                 marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '280px' : '0',
                 padding: '0 0 100px 0',
-                transition: 'margin 0.3sease'
+                transition: 'margin 0.3s ease'
             }}>
                 {/* Header */}
                 <header style={{
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                <div className="container" style={{ padding: '40px' }}>
+                <div style={{ padding: '40px', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
                     <motion.div
                         key={view}
                         initial={{ opacity: 0, y: 10 }}

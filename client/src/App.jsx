@@ -131,7 +131,7 @@ const MainApp = () => {
   // IF TECHNICIAN: Render dedicated Dashboard Layout
   if (user?.role === 'technician' && !activeTab.startsWith('admin')) {
     return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', width: '100%' }}>
         {activeTab === 'home' ? (
           activeJob ? (
             <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />

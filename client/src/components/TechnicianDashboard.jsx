@@ -233,8 +233,8 @@ const TechnicianDashboard = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', borderRight: '1px solid var(--border)' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--success)' }}>ONLINE</span>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#10b981', letterSpacing: '0.05em' }}>ONLINE</span>
                         </div>
                         <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
                             {theme === 'dark' ? '☀️' : '🌙'}
@@ -242,7 +242,7 @@ const TechnicianDashboard = () => {
                     </div>
                 </header>
 
-                <div className="container" style={{ padding: '40px' }}>
+                <div style={{ padding: '40px', maxWidth: '1800px', margin: '0 auto', width: '100%' }}>
                     <AnimatePresence mode="wait">
                         {activeView === 'overview' && (
                             <motion.div
