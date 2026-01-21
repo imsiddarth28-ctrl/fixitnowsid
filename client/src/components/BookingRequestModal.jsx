@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, Calendar, AlertCircle, CheckCircle, User, MapPin, DollarSign } from 'lucide-react';
+import { X, Clock, Calendar, AlertCircle, CheckCircle, User, MapPin, ArrowRight, ArrowLeft, Zap, ChevronRight, ShieldCheck } from 'lucide-react';
 import API_URL from '../config';
 
 const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId }) => {
-    const [step, setStep] = useState(1); // 1: Service details, 2: Time selection, 3: Confirm
+    const [step, setStep] = useState(1); // 1: Service selection, 2: Time/Schedule, 3: Confirm
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [technicianStatus, setTechnicianStatus] = useState(null);
@@ -14,7 +14,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
         serviceType: '',
         description: '',
         urgency: 'normal',
-        estimatedDuration: 60, // minutes
+        estimatedDuration: 60,
         scheduledTime: null,
         isScheduled: false,
         location: {
@@ -26,31 +26,25 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
 
     const [availableSlots, setAvailableSlots] = useState([]);
 
-    // Service types with estimated durations
     const serviceTypes = [
         { id: 'plumbing', label: 'Plumbing', duration: 90, icon: '🔧' },
         { id: 'electrical', label: 'Electrical', duration: 120, icon: '⚡' },
         { id: 'carpentry', label: 'Carpentry', duration: 180, icon: '🪚' },
-        { id: 'painting', label: 'Painting', duration: 240, icon: '🎨' },
         { id: 'cleaning', label: 'Cleaning', duration: 120, icon: '🧹' },
         { id: 'appliance_repair', label: 'Appliance Repair', duration: 90, icon: '🔨' },
-        { id: 'hvac', label: 'HVAC', duration: 120, icon: '❄️' },
-        { id: 'other', label: 'Other', duration: 60, icon: '🛠️' }
+        { id: 'other', label: 'General Task', duration: 60, icon: '🛠️' }
     ];
 
-    // Check customer's active bookings and technician availability
     useEffect(() => {
         const checkStatus = async () => {
             setCheckingAvailability(true);
             try {
-                // Check if customer has active booking
                 const customerRes = await fetch(`${API_URL}/api/customers/${customerId}/active-booking`);
                 if (customerRes.ok) {
                     const data = await customerRes.json();
                     setHasActiveBooking(data.hasActiveBooking);
                 }
 
-                // Check technician availability
                 const techRes = await fetch(`${API_URL}/api/technicians/${technician._id}/availability`);
                 if (techRes.ok) {
                     const data = await techRes.json();
@@ -66,43 +60,29 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
         checkStatus();
     }, [customerId, technician._id]);
 
-    // Generate available time slots when technician is busy
-    const generateTimeSlots = () => {
-        if (!technicianStatus?.isBusy || !technicianStatus?.estimatedFreeTime) return;
-
-        const slots = [];
-        const freeTime = new Date(technicianStatus.estimatedFreeTime);
-
-        // Generate slots for next 24 hours after technician is free
-        for (let i = 0; i < 8; i++) {
-            const slotTime = new Date(freeTime.getTime() + (i * 3 * 60 * 60 * 1000)); // 3-hour intervals
-            slots.push({
-                time: slotTime,
-                label: slotTime.toLocaleString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            });
-        }
-
-        setAvailableSlots(slots);
-    };
-
     useEffect(() => {
-        if (technicianStatus?.isBusy) {
-            generateTimeSlots();
+        if (technicianStatus?.isBusy && technicianStatus?.estimatedFreeTime) {
+            const slots = [];
+            const freeTime = new Date(technicianStatus.estimatedFreeTime);
+            for (let i = 0; i < 4; i++) {
+                const slotTime = new Date(freeTime.getTime() + (i * 2 * 60 * 60 * 1000) + (30 * 60 * 1000));
+                slots.push({
+                    time: slotTime,
+                    label: slotTime.toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+                });
+            }
+            setAvailableSlots(slots);
         }
     }, [technicianStatus]);
 
     const handleServiceSelect = (service) => {
-        setBookingData({
-            ...bookingData,
-            serviceType: service.id,
-            estimatedDuration: service.duration
-        });
+        setBookingData({ ...bookingData, serviceType: service.label, estimatedDuration: service.duration });
+        setStep(2);
+    };
+
+    const handleTimeSelect = (slot) => {
+        setBookingData({ ...bookingData, scheduledTime: slot.time, isScheduled: true });
+        setStep(3);
     };
 
     const handleSubmit = async () => {
@@ -115,7 +95,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                     customerId,
                     technicianId: technician._id,
                     ...bookingData,
-                    status: 'pending_approval'
+                    status: technicianStatus?.isBusy ? 'pending_approval' : 'accepted'
                 })
             });
 
@@ -129,258 +109,205 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
             onClose();
         } catch (err) {
             console.error('Booking failed:', err);
-            alert(err.message);
         } finally {
             setLoading(false);
         }
     };
 
+    const StatusBadge = ({ type }) => {
+        const colors = {
+            busy: { bg: 'rgba(255, 149, 0, 0.1)', text: 'var(--warning)', label: 'CURRENTLY BUSY' },
+            available: { bg: 'rgba(16, 185, 129, 0.1)', text: 'var(--success)', label: 'AVAILABLE NOW' }
+        };
+        const style = colors[type];
+        return (
+            <span style={{
+                background: style.bg, color: style.text, padding: '4px 10px',
+                borderRadius: '8px', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.05em'
+            }}>
+                {style.label}
+            </span>
+        );
+    };
+
     if (checkingAvailability) {
         return (
-            <div style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999
-            }}>
-                <div style={{ color: 'white', fontSize: '1.2rem' }}>
-                    Checking availability...
-                </div>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ width: '32px', height: '32px', border: '3px solid var(--border)', borderTopColor: 'var(--text)', borderRadius: '50%' }} />
             </div>
         );
     }
 
     if (hasActiveBooking) {
         return (
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.8)',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    padding: '1rem'
-                }}
-                onClick={onClose}
-            >
-                <motion.div
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                        background: 'var(--bg)',
-                        borderRadius: '1.5rem',
-                        maxWidth: '500px',
-                        width: '100%',
-                        padding: '2rem',
-                        textAlign: 'center',
-                        border: '1px solid var(--border)'
-                    }}
-                >
-                    <AlertCircle size={64} color="#f59e0b" style={{ margin: '0 auto 1rem' }} />
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '1rem' }}>
-                        Active Booking Exists
-                    </h2>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
-                        You already have an active booking. Please complete or cancel your current booking before creating a new one.
-                    </p>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            padding: '0.75rem 2rem',
-                            borderRadius: '0.75rem',
-                            border: 'none',
-                            background: '#3b82f6',
-                            color: 'white',
-                            fontWeight: 800,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Got It
-                    </button>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass" style={{ borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '40px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                    <div style={{ width: '64px', height: '64px', background: 'rgba(239,68,68,0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--error)' }}>
+                        <AlertCircle size={32} />
+                    </div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '12px', fontFamily: 'var(--font-heading)' }}>Conflict Detected</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '32px' }}>You already have an active synchronization session. Finish your current task before starting a new one.</p>
+                    <button onClick={onClose} className="btn btn-primary" style={{ width: '100%' }}>ACKNOWLEDGE</button>
                 </motion.div>
-            </motion.div>
+            </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(4px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
-                padding: '1rem'
-            }}
-            onClick={onClose}
-        >
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }} onClick={onClose}>
             <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
                 onClick={(e) => e.stopPropagation()}
+                className="glass"
                 style={{
-                    background: 'var(--bg)',
-                    borderRadius: '1.5rem',
-                    maxWidth: '700px',
-                    width: '100%',
-                    maxHeight: '90vh',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                    borderRadius: '32px', maxWidth: '540px', width: '100%',
+                    maxHeight: '90vh', overflow: 'hidden', display: 'flex',
+                    flexDirection: 'column', border: '1px solid var(--border)'
                 }}
             >
-                {/* Header */}
-                <div style={{
-                    padding: '1.5rem',
-                    borderBottom: '1px solid var(--border)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(59, 130, 246, 0.05)'
-                }}>
-                    <div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>
-                            Book Service
-                        </h2>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.3rem 0 0 0' }}>
-                            {step === 1 && 'Select service type'}
-                            {step === 2 && 'Choose time slot'}
-                            {step === 3 && 'Confirm booking'}
-                        </p>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border)',
-                            borderRadius: '0.5rem',
-                            padding: '0.5rem',
-                            cursor: 'pointer',
-                            color: 'var(--text)',
-                            display: 'flex'
-                        }}
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Technician Info */}
-                <div style={{
-                    padding: '1rem 1.5rem',
-                    background: 'var(--card)',
-                    borderBottom: '1px solid var(--border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem'
-                }}>
-                    <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.5rem',
-                        fontWeight: 900,
-                        color: 'white'
-                    }}>
-                        {technician.name?.charAt(0).toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>
-                            {technician.name}
+                {/* Header Section */}
+                <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                        <div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
+                                Booking Module / Step 0{step}
+                            </div>
+                            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
+                                {step === 1 ? 'Select Objective' : step === 2 ? 'Temporal Alignment' : 'Final Verification'}
+                            </h2>
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {technician.specialty || 'General Technician'}
-                            {technicianStatus?.isBusy && (
-                                <span style={{
-                                    padding: '0.2rem 0.5rem',
-                                    background: '#f59e0b',
-                                    color: 'white',
-                                    borderRadius: '0.3rem',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700
-                                }}>
-                                    BUSY
-                                </span>
-                            )}
+                        <button onClick={onClose} style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: 'var(--text)' }}>
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="glass" style={{ padding: '16px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-secondary)' }}>
+                        <div style={{ width: '48px', height: '48px', background: 'var(--text)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontWeight: '800' }}>
+                            {technician.name?.charAt(0)}
                         </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '800', fontSize: '1rem' }}>{technician.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{technician.serviceType} Specialist</div>
+                        </div>
+                        <StatusBadge type={technicianStatus?.isBusy ? 'busy' : 'available'} />
                     </div>
                 </div>
 
-                {/* Content - Will implement steps next */}
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: '1.5rem'
-                }}>
-                    {/* Step content will go here */}
-                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                        Booking form implementation in progress...
-                    </div>
+                {/* Content Section */}
+                <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+                    <AnimatePresence mode="wait">
+                        {step === 1 && (
+                            <motion.div key="step1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                                    {serviceTypes.map(s => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => handleServiceSelect(s)}
+                                            className="bento-card"
+                                            style={{ padding: '24px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s ease', border: '1px solid var(--border)' }}
+                                        >
+                                            <div style={{ fontSize: '1.5rem', marginBottom: '16px' }}>{s.icon}</div>
+                                            <div style={{ fontWeight: '800', fontSize: '1rem', marginBottom: '4px' }}>{s.label}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Duration: ~{s.duration} min</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 2 && (
+                            <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                {technicianStatus?.isBusy ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ padding: '16px', background: 'rgba(255, 149, 0, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 149, 0, 0.1)', color: 'var(--warning)', fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <Clock size={18} /> Next available synchronization windows:
+                                        </div>
+                                        {availableSlots.map((slot, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => handleTimeSelect(slot)}
+                                                className="bento-card"
+                                                style={{ padding: '20px', textAlign: 'left', fontWeight: '800', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                            >
+                                                {slot.label}
+                                                <ChevronRight size={18} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                                        <div style={{ width: '80px', height: '80px', background: 'var(--bg-tertiary)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--success)' }}>
+                                            <div style={{ fontSize: '2.5rem' }}><Zap /></div>
+                                        </div>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>Instant Deployment</h3>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '32px', lineHeight: '1.6' }}>
+                                            Technician is currently on standby. Deployment can begin immediately upon confirmation.
+                                        </p>
+                                        <button onClick={() => setStep(3)} className="btn btn-primary" style={{ padding: '16px 48px' }}>INITIALIZE NOW</button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {step === 3 && (
+                            <motion.div key="step3" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+                                <div className="glass" style={{ padding: '28px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--bg-tertiary)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <div style={{ width: '40px', height: '40px', background: 'var(--text)', color: 'var(--bg)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <ShieldCheck size={20} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Selected Operation</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>{bookingData.serviceType}</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Schedule</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: '700' }}>{bookingData.isScheduled ? bookingData.scheduledTime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Immediate Delivery'}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Execution Time</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: '700' }}>~{bookingData.estimatedDuration} Minutes</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ height: '1px', background: 'var(--border)' }} />
+
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', display: 'flex', gap: '8px' }}>
+                                        <AlertCircle size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
+                                        <span>Final pricing will be determined post-inspection by the technician based on material requirements.</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                {/* Footer */}
-                <div style={{
-                    padding: '1.5rem',
-                    borderTop: '1px solid var(--border)',
-                    display: 'flex',
-                    gap: '1rem',
-                    justifyContent: 'flex-end',
-                    background: 'var(--card)'
-                }}>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '0.75rem',
-                            border: '1px solid var(--border)',
-                            background: 'transparent',
-                            color: 'var(--text)',
-                            fontWeight: 800,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '0.75rem',
-                            border: 'none',
-                            background: loading ? 'var(--border)' : '#3b82f6',
-                            color: 'white',
-                            fontWeight: 800,
-                            cursor: loading ? 'not-allowed' : 'pointer'
-                        }}
-                    >
-                        {loading ? 'Creating...' : 'Create Booking'}
-                    </button>
+                {/* Navigation Section */}
+                <div style={{ padding: '24px 32px 32px', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
+                    {step > 1 && (
+                        <button onClick={() => setStep(step - 1)} className="btn btn-secondary" style={{ flex: 1, padding: '16px' }}>BACK</button>
+                    )}
+                    {step === 3 ? (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="btn btn-primary"
+                            style={{ flex: 2, padding: '16px' }}
+                        >
+                            {loading ? 'SYNCHRONIZING...' : 'CONFIRM MISSION'}
+                        </button>
+                    ) : (
+                        step !== 1 && (
+                            <button onClick={() => setStep(3)} className="btn btn-primary" style={{ flex: 2, padding: '16px' }}>SKIP TO SUMMARY</button>
+                        )
+                    )}
                 </div>
             </motion.div>
-        </motion.div>
+        </div>
     );
 };
 

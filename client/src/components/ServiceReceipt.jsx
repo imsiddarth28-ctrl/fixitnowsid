@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
+import { Download, CheckCircle2, Clock, ShieldCheck, FileText, X } from 'lucide-react';
 
 const ServiceReceipt = ({ job, onClose }) => {
     if (!job) return null;
@@ -8,12 +8,12 @@ const ServiceReceipt = ({ job, onClose }) => {
     const formattedDate = new Date(job.completedAt || Date.now()).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
     });
 
     const handleDownloadPDF = () => {
-        // Create a print-friendly version
         const printWindow = window.open('', '_blank');
         const receiptHTML = `
             <!DOCTYPE html>
@@ -21,89 +21,81 @@ const ServiceReceipt = ({ job, onClose }) => {
             <head>
                 <title>FixItNow Receipt - ${job._id.slice(-6).toUpperCase()}</title>
                 <style>
-                    @page { margin: 20mm; }
-                    body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
-                    .header { text-align: center; margin-bottom: 30px; padding: 20px; background: #10b981; color: white; border-radius: 10px; }
-                    .header h1 { margin: 0; font-size: 24px; }
-                    .header p { margin: 5px 0 0 0; font-size: 12px; opacity: 0.9; }
-                    .section { margin: 20px 0; padding: 15px; border: 1px solid #e5e7eb; border-radius: 8px; }
-                    .section-title { font-size: 11px; color: #6b7280; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-                    .service-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-                    .line-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 14px; }
-                    .total { border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 16px; }
-                    .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px; }
-                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
-                    .info-item { font-size: 13px; }
-                    .info-label { color: #6b7280; font-size: 11px; margin-bottom: 4px; }
-                    .info-value { font-weight: 600; }
-                    @media print { 
-                        body { padding: 20px; }
-                        .no-print { display: none; }
-                    }
+                    @page { margin: 15mm; }
+                    body { font-family: 'Inter', -apple-system, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; color: #1d1d1f; }
+                    .header { border-bottom: 2px solid #000; padding-bottom: 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+                    .title { font-size: 32px; font-weight: 900; letter-spacing: -0.04em; margin: 0; }
+                    .tx-id { font-family: monospace; font-size: 14px; color: #86868b; margin: 0; }
+                    .section { margin: 24px 0; }
+                    .section-label { font-size: 10px; font-weight: 800; color: #86868b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                    .info-val { font-size: 15px; font-weight: 600; }
+                    .line-item { display: flex; justify-content: space-between; margin: 12px 0; font-size: 14px; }
+                    .total-box { background: #fafafa; padding: 20px; border-radius: 12px; margin-top: 30px; }
+                    .total-row { display: flex; justify-content: space-between; align-items: center; }
+                    .total-label { font-size: 18px; font-weight: 900; }
+                    .total-val { font-size: 24px; font-weight: 900; }
+                    .footer { text-align: center; margin-top: 50px; font-size: 11px; color: #86868b; border-top: 1px solid #f2f2f2; padding-top: 30px; }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>✓ SERVICE COMPLETED</h1>
-                    <p>Transaction ID: #${job._id.slice(-8).toUpperCase()}</p>
-                    <p style="margin-top: 5px; font-size: 10px;">FixItNow Professional Services</p>
+                    <div>
+                        <h1 class="title">RECEIPT</h1>
+                        <p class="tx-id">TIMESTAMP: ${new Date().toISOString()}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="font-weight: 900; margin: 0;">FIXITNOW</p>
+                        <p class="tx-id">PRO VERSION 2.0</p>
+                    </div>
                 </div>
                 
                 <div class="section">
-                    <div class="section-title">Service Summary</div>
-                    <div class="service-name">${job.serviceType}</div>
-                    <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">Completed on ${formattedDate}</div>
-                    ${job.description ? `<div style="font-size: 12px; color: #6b7280; margin-top: 8px; padding: 10px; background: #f9fafb; border-radius: 5px;">${job.description}</div>` : ''}
+                    <p class="section-label">Service Summary</p>
+                    <p style="font-size: 20px; font-weight: 800; margin: 0;">${job.serviceType}</p>
+                    <p style="color: #86868b; font-size: 14px; margin-top: 4px;">Executed on ${formattedDate}</p>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">Service Details</div>
+                    <p class="section-label">Personnel & Location</p>
                     <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">Technician</div>
-                            <div class="info-value">${job.technicianId?.name || 'Professional'}</div>
+                        <div>
+                            <p class="section-label" style="font-size: 8px;">TECHNICIAN</p>
+                            <p class="info-val">${job.technicianId?.name || 'Authorized Pro'}</p>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label">Customer</div>
-                            <div class="info-value">${job.customerId?.name || 'Client'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Location</div>
-                            <div class="info-value">${job.location?.address || 'Service Location'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Service Type</div>
-                            <div class="info-value">${job.isEmergency ? '🚨 Emergency' : 'Standard'}</div>
+                        <div>
+                            <p class="section-label" style="font-size: 8px;">LOCATION</p>
+                            <p class="info-val">${job.location?.address || 'On-site Service'}</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="section">
-                    <div class="section-title">Payment Breakdown</div>
+                <div class="total-box">
+                    <p class="section-label">Financial Breakdown</p>
                     <div class="line-item">
-                        <span>Service Fee</span>
-                        <span>$${(job.price * 0.8).toFixed(2)}</span>
+                        <span>Base Service Fee</span>
+                        <span>$${(job.price * 0.85).toFixed(2)}</span>
                     </div>
                     ${job.isEmergency ? `
-                    <div class="line-item" style="color: #ef4444;">
-                        <span>Emergency Surcharge</span>
+                    <div class="line-item" style="color: #ff3b30; font-weight: 700;">
+                        <span>Urgent Handling Surcharge</span>
                         <span>+$30.00</span>
                     </div>` : ''}
                     <div class="line-item">
-                        <span>Platform Fee</span>
-                        <span>$${(job.price * 0.2).toFixed(2)}</span>
+                        <span>System Surcharge</span>
+                        <span>$${(job.price * 0.15).toFixed(2)}</span>
                     </div>
-                    <div class="line-item total">
-                        <span>TOTAL AMOUNT</span>
-                        <span style="color: #10b981;">$${job.price?.toFixed(2)}</span>
+                    <div style="height: 1px; background: #e5e5e5; margin: 15px 0;"></div>
+                    <div class="total-row">
+                        <span class="total-label">FINAL SETTLEMENT</span>
+                        <span class="total-val">$${job.price?.toFixed(2)}</span>
                     </div>
                 </div>
                 
                 <div class="footer">
-                    <p style="margin: 10px 0;"><strong>🛡️ Secure Payment via FixItNow Escrow</strong></p>
-                    <p style="margin: 5px 0;">This is an official receipt for services rendered through FixItNow platform.</p>
-                    <p style="margin: 5px 0;">For support, visit fixitnow.com/support</p>
-                    <p style="margin: 15px 0 5px 0; font-size: 10px;">Generated on ${new Date().toLocaleString()}</p>
+                    <p><strong>FIXITNOW SECURE AUTHENTICATION REVEALED</strong></p>
+                    <p>This document verifies the completion of a digital service contract via FixItNow.</p>
+                    <p>All transactions are protected by end-to-end encryption and secure escrow systems.</p>
                 </div>
             </body>
             </html>
@@ -111,13 +103,11 @@ const ServiceReceipt = ({ job, onClose }) => {
 
         printWindow.document.write(receiptHTML);
         printWindow.document.close();
-
-        // Wait for content to load, then print
         printWindow.onload = () => {
             setTimeout(() => {
                 printWindow.print();
                 printWindow.onafterprint = () => printWindow.close();
-            }, 250);
+            }, 500);
         };
     };
 
@@ -131,145 +121,136 @@ const ServiceReceipt = ({ job, onClose }) => {
                 style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.85)',
-                    backdropFilter: 'blur(10px)',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(12px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 10000,
-                    padding: '1rem',
-                    cursor: 'pointer'
+                    padding: '24px'
                 }}
             >
                 <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
+                    initial={{ scale: 0.95, y: 20, opacity: 0 }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    exit={{ scale: 0.95, y: 20, opacity: 0 }}
                     onClick={(e) => e.stopPropagation()}
+                    className="glass"
                     style={{
-                        background: 'var(--bg)',
                         width: '100%',
-                        maxWidth: '360px',
-                        borderRadius: '1rem',
+                        maxWidth: '400px',
+                        borderRadius: '32px',
                         border: '1px solid var(--border)',
                         overflow: 'hidden',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-                        cursor: 'default'
+                        boxShadow: '0 40px 100px rgba(0,0,0,0.2)',
+                        background: 'var(--bg-secondary)'
                     }}
                 >
-                    {/* Compact Header */}
+                    {/* Header: Success Confirmation */}
                     <div style={{
-                        padding: '1.2rem',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        padding: '40px 32px 32px',
                         textAlign: 'center',
-                        color: 'white'
+                        background: 'var(--bg-tertiary)',
+                        borderBottom: '1px solid var(--border)'
                     }}>
                         <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.2)',
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '24px',
+                            background: 'var(--text)',
+                            color: 'var(--bg)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            margin: '0 auto 0.8rem'
+                            margin: '0 auto 20px'
                         }}>
-                            <CheckCircle2 size={20} />
+                            <CheckCircle2 size={32} />
                         </div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '0.2rem' }}>COMPLETE</h2>
-                        <p style={{ opacity: 0.8, fontSize: '0.65rem', fontWeight: 600 }}>TX: #{job._id.slice(-6).toUpperCase()}</p>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: '900', fontFamily: 'var(--font-heading)', color: 'var(--text)', marginBottom: '4px' }}>
+                            MISSION COMPLETE
+                        </h2>
+                        <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
+                            TX: #{job._id.slice(-8).toUpperCase()}
+                        </div>
                     </div>
 
-                    {/* Compact Details */}
-                    <div style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ paddingBottom: '0.8rem', borderBottom: '1px dashed var(--border)' }}>
-                            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '0.05em' }}>SERVICE</div>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '0.3rem' }}>{job.serviceType}</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                                <Clock size={10} />
+                    {/* Receipt Details */}
+                    <div style={{ padding: '32px' }}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                                Operation Data
+                            </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text)' }}>{job.serviceType}</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
+                                <Clock size={14} />
                                 <span>{formattedDate}</span>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Service Fee</span>
-                                <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>${(job.price * 0.8).toFixed(2)}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'var(--bg-tertiary)', padding: '24px', borderRadius: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Service Fee</span>
+                                <span style={{ fontWeight: '800', color: 'var(--text)' }}>${(job.price * 0.85).toFixed(2)}</span>
                             </div>
                             {job.isEmergency && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>Emergency</span>
-                                    <span style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>+$30.00</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                    <span style={{ color: 'var(--error)', fontWeight: '700' }}>Urgent Surcharge</span>
+                                    <span style={{ fontWeight: '800', color: 'var(--error)' }}>+$30.00</span>
                                 </div>
                             )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Platform</span>
-                                <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>${(job.price * 0.2).toFixed(2)}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>System Fee</span>
+                                <span style={{ fontWeight: '800', color: 'var(--text)' }}>${(job.price * 0.15).toFixed(2)}</span>
                             </div>
-                            <div style={{
-                                marginTop: '0.5rem',
-                                paddingTop: '0.6rem',
-                                borderTop: '2px solid var(--border)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            }}>
-                                <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>TOTAL</span>
-                                <span style={{ fontWeight: 900, fontSize: '1.3rem', color: '#10b981' }}>${job.price?.toFixed(2)}</span>
+
+                            <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--text)' }}>TOTAL</span>
+                                <span style={{ fontWeight: '900', fontSize: '1.75rem', color: 'var(--success)', letterSpacing: '-0.03em' }}>
+                                    ${job.price?.toFixed(2)}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Compact Trust Badge */}
+                        {/* Security Badge */}
                         <div style={{
-                            background: 'var(--card)',
-                            padding: '0.6rem',
-                            borderRadius: '0.5rem',
+                            marginTop: '24px',
+                            background: 'rgba(16, 185, 129, 0.05)',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem',
-                            border: '1px solid var(--border)'
+                            gap: '10px',
+                            border: '1px solid rgba(16, 185, 129, 0.1)'
                         }}>
-                            <ShieldCheck size={14} color="#10b981" />
-                            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                                SECURE ESCROW SETTLEMENT
+                            <ShieldCheck size={18} color="var(--success)" />
+                            <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--success)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                                Verified Secure Escrow Settlement
                             </span>
                         </div>
 
-                        {/* Compact Actions */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                        {/* Actions */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '32px' }}>
                             <button
                                 onClick={handleDownloadPDF}
+                                className="btn btn-secondary"
                                 style={{
-                                    padding: '0.7rem',
-                                    borderRadius: '0.5rem',
-                                    background: 'var(--text)',
-                                    color: 'var(--bg)',
-                                    border: 'none',
-                                    fontWeight: 800,
-                                    fontSize: '0.7rem',
-                                    cursor: 'pointer',
+                                    padding: '14px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '0.4rem'
+                                    gap: '8px'
                                 }}
                             >
-                                <Download size={12} /> PDF
+                                <FileText size={18} /> EXPORT
                             </button>
                             <button
                                 onClick={onClose}
-                                style={{
-                                    padding: '0.7rem',
-                                    borderRadius: '0.5rem',
-                                    background: 'transparent',
-                                    color: 'var(--text)',
-                                    border: '1px solid var(--border)',
-                                    fontWeight: 800,
-                                    fontSize: '0.7rem',
-                                    cursor: 'pointer'
-                                }}
+                                className="btn btn-primary"
+                                style={{ padding: '14px' }}
                             >
-                                CLOSE
+                                DISMISS
                             </button>
                         </div>
                     </div>

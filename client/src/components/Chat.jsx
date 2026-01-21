@@ -1,370 +1,293 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, X, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { subscribeToEvent } from '../socket';
-import API_URL from '../config';
+import { Send, User, Shield, CheckCheck, Clock, Paperclip, Smile, MoreVertical, MessageSquare } from 'lucide-react';
+import Pusher from 'pusher-js';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
-const Chat = ({ jobId, receiverId, onClose, isCompact = false }) => {
+const Chat = ({ jobId, otherUser, isCompact = false }) => {
     const { user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [sending, setSending] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const messagesEndRef = useRef(null);
-    const inputRef = useRef(null);
 
-    // Fetch chat history
     useEffect(() => {
-        const abortController = new AbortController();
-
-        const fetchMessages = async () => {
-            if (!jobId) return;
-            try {
-                setLoading(true);
-                const res = await fetch(`${API_URL}/api/messages/${jobId}`, {
-                    signal: abortController.signal,
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setMessages(Array.isArray(data) ? data : []);
-                }
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error('Failed to fetch messages:', err);
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchMessages();
-        return () => abortController.abort();
-    }, [jobId]);
+        const pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY, {
+            cluster: import.meta.env.VITE_PUSHER_CLUSTER,
+        });
 
-    // Real-time message listener
-    useEffect(() => {
-        if (!jobId) return;
+        const channel = pusher.subscribe(`chat-${jobId}`);
+        channel.bind('new-message', (data) => {
+            if (data.senderId !== user.id) {
+                setMessages(prev => [...prev, data]);
+            }
+        });
 
-        const handleNewMessage = (data) => {
-            setMessages(prev => {
-                // Prevent duplicates
-                const isDuplicate = prev.some(msg =>
-                    msg._id === data._id ||
-                    (msg.text === data.text && Math.abs(new Date(msg.timestamp) - new Date(data.timestamp)) < 1000)
-                );
-                if (isDuplicate) return prev;
-                return [...prev, data];
-            });
-        };
-
-        const unsubscribe = subscribeToEvent(`job-${jobId}`, 'receive_message', handleNewMessage);
         return () => {
-            if (unsubscribe) unsubscribe();
+            channel.unbind_all();
+            channel.unsubscribe();
         };
     }, [jobId]);
 
-    // Auto-scroll
     useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-        }
+        scrollToBottom();
     }, [messages]);
 
-    // Send message
-    const sendMessage = async (e) => {
-        e?.preventDefault();
-        if (!newMessage.trim() || sending || !jobId) return;
+    const fetchMessages = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/messages?jobId=${jobId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch messages:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        const messageText = newMessage.trim();
-        const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
-        setNewMessage('');
-        setSending(true);
+    const handleSend = async (e) => {
+        if (e) e.preventDefault();
+        if (!newMessage.trim()) return;
 
-        // Optimistic UI update
-        const tempMessage = {
-            _id: tempId,
-            text: messageText,
-            senderId: user?.id || 'me',
-            senderRole: user?.role || 'customer',
+        const messageData = {
+            jobId,
+            senderId: user.id,
+            text: newMessage.trim(),
             timestamp: new Date().toISOString(),
-            isOptimistic: true
         };
 
-        setMessages(prev => [...prev, tempMessage]);
+        // Optimistic UI update
+        setMessages(prev => [...prev, { ...messageData, isOptimistic: true }]);
+        setNewMessage('');
 
         try {
             const res = await fetch(`${API_URL}/api/messages`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    jobId,
-                    senderId: user?.id || 'current-user',
-                    senderRole: user?.role || 'customer',
-                    text: messageText,
-                    receiverId: receiverId || 'receiver'
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(messageData),
             });
 
-            if (res.ok) {
-                const savedMessage = await res.json();
-                setMessages(prev => prev.map(msg =>
-                    msg._id === tempId ? { ...savedMessage, isOptimistic: false } : msg
-                ));
-            } else {
-                const error = await res.json();
-                throw new Error(error.message || 'Failed to send');
-            }
+            if (!res.ok) throw new Error('Failed to send');
         } catch (err) {
-            console.error('Send failed:', err);
-            // Mark as failed instead of removing
-            setMessages(prev => prev.map(msg =>
-                msg._id === tempId ? { ...msg, failed: true, isOptimistic: false } : msg
-            ));
-        } finally {
-            setSending(false);
-            if (inputRef.current) {
-                inputRef.current.focus();
-            }
+            console.error('Send error:', err);
         }
-    };
-
-    // Handle Enter key
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    };
-
-    // Retry failed message
-    const retryMessage = (msg) => {
-        setMessages(prev => prev.filter(m => m._id !== msg._id));
-        setNewMessage(msg.text);
     };
 
     return (
-        <div style={{
+        <div className="glass" style={{
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            width: '100%',
             background: 'var(--bg)',
-            borderLeft: isCompact ? '1px solid var(--border)' : 'none',
-            position: 'relative'
+            borderLeft: !isCompact ? '1px solid var(--border)' : 'none',
+            color: 'var(--text)',
+            overflow: 'hidden'
         }}>
-            {/* Header */}
+            {/* Chat Header */}
             <div style={{
-                padding: isCompact ? '0.75rem 1rem' : '1rem 1.5rem',
+                padding: '24px 32px',
                 borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                background: 'rgba(59, 130, 246, 0.05)',
-                backdropFilter: 'blur(10px)',
-                flexShrink: 0
+                background: 'var(--bg-secondary)',
+                zIndex: 10
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Shield size={isCompact ? 16 : 18} color="#3b82f6" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '16px',
+                        background: 'var(--text)',
+                        color: 'var(--bg)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '900',
+                        fontSize: '1.2rem',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }}>
+                        {otherUser?.name?.charAt(0) || 'U'}
+                    </div>
                     <div>
-                        <div style={{
-                            fontSize: isCompact ? '0.7rem' : '0.75rem',
-                            fontWeight: 900,
-                            color: '#3b82f6',
-                            letterSpacing: '0.1em'
-                        }}>
-                            SECURE CHAT
-                        </div>
-                        <div style={{
-                            fontSize: isCompact ? '0.65rem' : '0.7rem',
-                            fontWeight: 600,
-                            color: 'var(--text-muted)',
-                            marginTop: '0.1rem'
-                        }}>
-                            End-to-End Encrypted
+                        <div style={{ fontWeight: '900', fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{otherUser?.name || 'SYNC_USER'}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', letterSpacing: '0.05em' }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 6px var(--success)' }}></div>
+                            COMMS_ACTIVE
                         </div>
                     </div>
                 </div>
-                {onClose && (
-                    <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={onClose}
-                        style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border)',
-                            borderRadius: '0.5rem',
-                            padding: '0.5rem',
-                            cursor: 'pointer',
-                            color: 'var(--text)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <X size={16} />
-                    </motion.button>
-                )}
+                <div style={{ display: 'flex', gap: '20px', color: 'var(--text-secondary)' }}>
+                    <Shield size={20} />
+                    <MoreVertical size={20} style={{ cursor: 'pointer' }} />
+                </div>
             </div>
 
-            {/* Messages */}
+            {/* Messages Area */}
             <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                overflowX: 'hidden',
-                padding: isCompact ? '0.75rem' : '1rem',
+                padding: '32px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: isCompact ? '0.75rem' : '1rem',
-                background: 'var(--bg)'
+                gap: '24px',
+                background: 'var(--bg)',
+                scrollbarWidth: 'none'
             }}>
-                {loading ? (
-                    <div style={{
-                        textAlign: 'center',
-                        color: 'var(--text-muted)',
-                        padding: '2rem 1rem',
-                        fontSize: isCompact ? '0.8rem' : '0.9rem'
-                    }}>
-                        Loading messages...
+                {isLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}>
+                            <Clock size={32} />
+                        </motion.div>
                     </div>
                 ) : messages.length === 0 ? (
-                    <div style={{
-                        textAlign: 'center',
-                        color: 'var(--text-muted)',
-                        padding: '2rem 1rem',
-                        fontSize: isCompact ? '0.8rem' : '0.9rem'
-                    }}>
-                        No messages yet. Start the conversation!
+                    <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--text-secondary)', maxWidth: '280px' }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '32px',
+                            background: 'var(--bg-tertiary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 24px',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <MessageSquare size={32} style={{ opacity: 0.5 }} />
+                        </div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.02em' }}>SECURE_GRID_INIT</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '500', lineHeight: '1.6' }}>All communications are encrypted and synchronized via neural link.</div>
                     </div>
                 ) : (
-                    <AnimatePresence>
-                        {messages.map((msg) => {
-                            const isMe = msg.senderId === user?.id || msg.senderId === 'me';
-                            return (
-                                <motion.div
-                                    key={msg._id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: isMe ? 'flex-end' : 'flex-start',
-                                        opacity: msg.isOptimistic ? 0.6 : 1
-                                    }}
-                                >
-                                    <div style={{
-                                        maxWidth: isCompact ? '85%' : '75%',
-                                        padding: isCompact ? '0.6rem 0.9rem' : '0.75rem 1rem',
-                                        borderRadius: isMe ? '1rem 1rem 0.2rem 1rem' : '1rem 1rem 1rem 0.2rem',
-                                        background: isMe ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'var(--card)',
-                                        color: isMe ? 'white' : 'var(--text)',
-                                        border: isMe ? 'none' : '1px solid var(--border)',
-                                        wordBreak: 'break-word',
-                                        boxShadow: isMe ? '0 4px 12px rgba(59, 130, 246, 0.3)' : '0 2px 8px rgba(0,0,0,0.05)',
-                                        position: 'relative'
-                                    }}>
-                                        <div style={{
-                                            fontSize: isCompact ? '0.8rem' : '0.875rem',
-                                            lineHeight: '1.5',
-                                            marginBottom: '0.3rem'
-                                        }}>
-                                            {msg.text}
-                                        </div>
-                                        <div style={{
-                                            fontSize: '0.65rem',
-                                            opacity: 0.7,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            justifyContent: isMe ? 'flex-end' : 'flex-start'
-                                        }}>
-                                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
-                                            {msg.failed && (
-                                                <span
-                                                    onClick={() => retryMessage(msg)}
-                                                    style={{
-                                                        color: '#ef4444',
-                                                        cursor: 'pointer',
-                                                        textDecoration: 'underline'
-                                                    }}
-                                                >
-                                                    Failed - Tap to retry
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </AnimatePresence>
+                    messages.map((msg, i) => {
+                        const isMe = msg.senderId === user.id;
+                        return (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                style={{
+                                    alignSelf: isMe ? 'flex-end' : 'flex-start',
+                                    maxWidth: '80%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: isMe ? 'flex-end' : 'flex-start'
+                                }}
+                            >
+                                <div style={{
+                                    padding: '16px 20px',
+                                    borderRadius: isMe ? '24px 24px 4px 24px' : '24px 24px 24px 4px',
+                                    background: isMe ? 'var(--text)' : 'var(--bg-secondary)',
+                                    color: isMe ? 'var(--bg)' : 'var(--text)',
+                                    fontSize: '0.95rem',
+                                    lineHeight: '1.5',
+                                    fontWeight: '600',
+                                    border: isMe ? 'none' : '1px solid var(--border)',
+                                    boxShadow: isMe ? '0 12px 24px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)'
+                                }}>
+                                    {msg.text}
+                                </div>
+                                <div style={{
+                                    marginTop: '8px',
+                                    fontSize: '0.65rem',
+                                    color: 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontWeight: '800',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {isMe && <CheckCheck size={14} color={msg.isOptimistic ? 'var(--text-secondary)' : 'var(--success)'} />}
+                                </div>
+                            </motion.div>
+                        );
+                    })
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <form onSubmit={sendMessage} style={{
-                padding: isCompact ? '0.75rem' : '1rem',
-                borderTop: '1px solid var(--border)',
-                background: 'var(--card)',
-                flexShrink: 0
+            {/* Input Area */}
+            <div style={{
+                padding: '32px',
+                background: 'var(--bg-secondary)',
+                borderTop: '1px solid var(--border)'
             }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <form
+                    onSubmit={handleSend}
+                    className="glass"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        background: 'var(--bg)',
+                        padding: '10px 10px 10px 24px',
+                        borderRadius: '24px',
+                        border: '1px solid var(--border)'
+                    }}
+                >
+                    <Paperclip size={20} className="icon-btn" style={{ color: 'var(--text-secondary)', cursor: 'pointer' }} />
                     <input
-                        ref={inputRef}
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
                         placeholder="Type a message..."
-                        disabled={sending}
+                        className="input"
                         style={{
                             flex: 1,
-                            padding: isCompact ? '0.6rem 0.9rem' : '0.75rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: '1px solid var(--border)',
-                            background: 'var(--bg)',
-                            color: 'var(--text)',
-                            fontSize: isCompact ? '0.8rem' : '0.875rem',
+                            background: 'transparent',
+                            border: 'none',
                             outline: 'none',
-                            transition: 'border-color 0.2s ease'
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            padding: '8px 0',
+                            color: 'var(--text)'
                         }}
-                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                     />
+                    <Smile size={20} className="icon-btn" style={{ color: 'var(--text-secondary)', cursor: 'pointer' }} />
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         type="submit"
-                        disabled={!newMessage.trim() || sending}
+                        disabled={!newMessage.trim()}
+                        className="btn btn-primary"
                         style={{
-                            padding: isCompact ? '0.6rem 0.9rem' : '0.75rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: 'none',
-                            background: newMessage.trim() && !sending ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'var(--border)',
-                            color: 'white',
-                            cursor: newMessage.trim() && !sending ? 'pointer' : 'not-allowed',
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '16px',
+                            padding: 0,
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: isCompact ? '38px' : '42px',
-                            transition: 'all 0.2s ease',
-                            boxShadow: newMessage.trim() && !sending ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                            justifyContent: 'center'
                         }}
                     >
-                        <Send size={isCompact ? 14 : 16} />
+                        <Send size={20} />
                     </motion.button>
+                </form>
+                <div style={{
+                    marginTop: '16px',
+                    fontSize: '0.65rem',
+                    color: 'var(--text-secondary)',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    fontWeight: '800',
+                    letterSpacing: '0.05em'
+                }}>
+                    <Shield size={12} />
+                    SECURE_PROTOCOL_ENCRYPTED
                 </div>
-            </form>
+            </div>
         </div>
     );
 };

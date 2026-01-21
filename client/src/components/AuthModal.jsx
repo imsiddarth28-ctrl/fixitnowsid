@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { X, ChevronRight, Mail, Lock, User, Phone, Briefcase } from 'lucide-react';
 
 const AuthModal = ({ onClose, onSuccess }) => {
     const { login, register } = useAuth();
@@ -40,14 +42,10 @@ const AuthModal = ({ onClose, onSuccess }) => {
 
             if (res.success) {
                 if (!isLogin) {
-                    // Technicians require approval, so don't auto-login
                     if (formData.role === 'technician') {
                         setIsLogin(true);
-                        setError('Registration successful! Your account is pending Admin approval. You will be able to login once verified.');
-                        // Use a success color/style generally, but here using error field for visibility temporarily or I should have a separate successMsg state.
-                        // Ideally, I should just switch to login view and show the message.
+                        setError('Registration successful! Your account is pending Admin approval.');
                     } else {
-                        // Auto-login for customers
                         const loginRes = await login(formData.email, formData.password, formData.role);
                         if (loginRes.success) {
                             if (onSuccess) onSuccess(formData.role);
@@ -81,341 +79,218 @@ const AuthModal = ({ onClose, onSuccess }) => {
     return (
         <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 9999,
-            padding: '2rem'
+            padding: '24px'
         }}>
-            <div style={{
-                background: 'var(--bg)',
-                borderRadius: '1rem',
-                maxWidth: '450px',
-                width: '100%',
-                padding: '3rem',
-                border: '1px solid var(--border)',
-                boxShadow: '0 40px 100px -20px rgba(0,0,0,0.3)',
-                position: 'relative'
-            }}>
-                {/* Close Button */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="glass"
+                style={{
+                    maxWidth: '440px',
+                    width: '100%',
+                    padding: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    position: 'relative',
+                    border: '1px solid var(--border)'
+                }}
+            >
                 <button
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        top: '1.5rem',
-                        right: '1.5rem',
-                        background: 'transparent',
+                        top: '24px',
+                        right: '24px',
+                        background: 'none',
                         border: 'none',
-                        fontSize: '1.5rem',
                         cursor: 'pointer',
-                        color: 'var(--text-muted)',
-                        padding: 0,
-                        width: '30px',
-                        height: '30px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        color: 'var(--text-secondary)'
                     }}
                 >
-                    ×
+                    <X size={24} />
                 </button>
 
-                {/* Header */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <h2 style={{
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: '2rem',
-                        fontWeight: 700,
-                        marginBottom: '0.5rem'
-                    }}>
-                        {isLogin ? 'Welcome Back' : 'Create Account'}
+                <div style={{ marginBottom: '32px' }}>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)', color: 'var(--text)', marginBottom: '8px' }}>
+                        {isLogin ? 'Welcome back' : 'Join FixItNow'}
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                        {isLogin ? 'Sign in to continue' : 'Sign up to get started'}
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                        {isLogin ? 'Enter your details to access your account' : 'Start your journey with premium services'}
                     </p>
                 </div>
 
-                {/* Error Display */}
                 {error && (
-                    <div style={{
-                        padding: '1rem',
-                        background: 'rgba(239,68,68,0.1)',
-                        color: 'var(--error)',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.9rem',
-                        marginBottom: '1.5rem',
-                        border: '1px solid rgba(239,68,68,0.2)',
-                        textAlign: 'center'
-                    }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                            padding: '12px 16px',
+                            background: 'rgba(239,68,68,0.1)',
+                            color: 'var(--error)',
+                            borderRadius: '10px',
+                            fontSize: '0.85rem',
+                            marginBottom: '24px',
+                            border: '1px solid rgba(239,68,68,0.2)',
+                            fontWeight: '600'
+                        }}
+                    >
                         {error}
-                    </div>
+                    </motion.div>
                 )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Role Selection */}
-                    <div>
-                        <label style={{
-                            display: 'block',
-                            marginBottom: '0.8rem',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            color: 'var(--text)'
-                        }}>
-                            I am a...
-                        </label>
-                        <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            background: 'var(--card)',
-                            padding: '0.4rem',
-                            borderRadius: '0.6rem',
-                            border: '1px solid var(--border)'
-                        }}>
-                            {['customer', 'technician'].map((role) => (
-                                <button
-                                    key={role}
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, role }))}
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.6rem',
-                                        borderRadius: '0.4rem',
-                                        border: 'none',
-                                        background: formData.role === role ? 'var(--text)' : 'transparent',
-                                        color: formData.role === role ? 'var(--bg)' : 'var(--text-muted)',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        textTransform: 'capitalize'
-                                    }}
-                                >
-                                    {role}
-                                </button>
-                            ))}
-                        </div>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Role Selection Tabs */}
+                    <div style={{
+                        display: 'flex',
+                        background: 'var(--bg-tertiary)',
+                        padding: '4px',
+                        borderRadius: '12px',
+                        marginBottom: '4px'
+                    }}>
+                        {['customer', 'technician'].map((role) => (
+                            <button
+                                key={role}
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, role }))}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: formData.role === role ? 'var(--bg-secondary)' : 'transparent',
+                                    color: formData.role === role ? 'var(--text)' : 'var(--text-secondary)',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}
+                            >
+                                {role}
+                            </button>
+                        ))}
                     </div>
 
-                    {!isLogin && (
-                        <>
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '0.5rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    color: 'var(--text)'
-                                }}>
-                                    Full Name
-                                </label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    placeholder="Enter your name"
-                                    required
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        transition: 'all 0.2s ease',
-                                        color: 'var(--text)'
-                                    }}
-                                    onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{
-                                    display: 'block',
-                                    marginBottom: '0.5rem',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    color: 'var(--text)'
-                                }}>
-                                    Phone Number
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    placeholder="Enter your phone number"
-                                    required
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        transition: 'all 0.2s ease',
-                                        color: 'var(--text)'
-                                    }}
-                                    onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                />
-                            </div>
-
-                            {formData.role === 'technician' && (
-                                <div>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '0.5rem',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 600,
-                                        color: 'var(--text)'
-                                    }}>
-                                        Service Specialization
-                                    </label>
-                                    <select
-                                        name="serviceType"
-                                        value={formData.serviceType}
+                    <AnimatePresence mode="wait">
+                        {!isLogin && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+                            >
+                                <div style={{ position: 'relative' }}>
+                                    <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        placeholder="Full Name"
+                                        required
+                                        className="input"
+                                        style={{ paddingLeft: '48px' }}
+                                        value={formData.name}
                                         onChange={handleChange}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.875rem 1rem',
-                                            borderRadius: '0.5rem',
-                                            border: '1px solid var(--border)',
-                                            background: 'var(--card)',
-                                            fontSize: '0.95rem',
-                                            outline: 'none',
-                                            transition: 'all 0.2s ease',
-                                            color: 'var(--text)'
-                                        }}
-                                    >
-                                        {['Plumber', 'Electrician', 'Cleaning', 'Carpenter', 'HVAC', 'Windows'].map(type => (
-                                            <option key={type} value={type}>{type}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
-                            )}
-                        </>
-                    )}
 
-                    <div>
-                        <label style={{
-                            display: 'block',
-                            marginBottom: '0.5rem',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            color: 'var(--text)'
-                        }}>
-                            Email
-                        </label>
+                                <div style={{ position: 'relative' }}>
+                                    <Phone size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        placeholder="Phone Number"
+                                        required
+                                        className="input"
+                                        style={{ paddingLeft: '48px' }}
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+
+                                {formData.role === 'technician' && (
+                                    <div style={{ position: 'relative' }}>
+                                        <Briefcase size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                        <select
+                                            name="serviceType"
+                                            className="input"
+                                            style={{ paddingLeft: '48px', appearance: 'none' }}
+                                            value={formData.serviceType}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="Plumber">Plumbing</option>
+                                            <option value="Electrician">Electrical</option>
+                                            <option value="Cleaning">Cleaning</option>
+                                            <option value="Carpenter">Carpentry</option>
+                                            <option value="HVAC">HVAC</option>
+                                            <option value="Windows">Windows</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div style={{ position: 'relative' }}>
+                        <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                         <input
                             type="email"
                             name="email"
+                            placeholder="Email Address"
+                            required
+                            className="input"
+                            style={{ paddingLeft: '48px' }}
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="Enter your email"
-                            style={{
-                                width: '100%',
-                                padding: '0.875rem 1rem',
-                                borderRadius: '0.5rem',
-                                border: '1px solid var(--border)',
-                                background: 'var(--card)',
-                                fontSize: '0.95rem',
-                                outline: 'none',
-                                transition: 'all 0.2s ease',
-                                color: 'var(--text)'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                         />
                     </div>
 
-                    <div>
-                        <label style={{
-                            display: 'block',
-                            marginBottom: '0.5rem',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            color: 'var(--text)'
-                        }}>
-                            Password
-                        </label>
+                    <div style={{ position: 'relative' }}>
+                        <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                         <input
                             type="password"
                             name="password"
+                            placeholder="Password"
+                            required
+                            className="input"
+                            style={{ paddingLeft: '48px' }}
                             value={formData.password}
                             onChange={handleChange}
-                            placeholder="Enter your password"
-                            style={{
-                                width: '100%',
-                                padding: '0.875rem 1rem',
-                                borderRadius: '0.5rem',
-                                border: '1px solid var(--border)',
-                                background: 'var(--card)',
-                                fontSize: '0.95rem',
-                                outline: 'none',
-                                transition: 'all 0.2s ease',
-                                color: 'var(--text)'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = 'var(--text)'}
-                            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                         />
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-primary"
                         disabled={loading}
-                        style={{
-                            width: '100%',
-                            padding: '1rem',
-                            fontSize: '1rem',
-                            marginTop: '0.5rem',
-                            opacity: loading ? 0.7 : 1,
-                            cursor: loading ? 'not-allowed' : 'pointer'
-                        }}
+                        className="btn btn-primary"
+                        style={{ padding: '14px', marginTop: '8px' }}
                     >
                         {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
                     </button>
                 </form>
 
-                {/* Toggle */}
-                <div style={{
-                    marginTop: '2rem',
-                    textAlign: 'center',
-                    fontSize: '0.9rem',
-                    color: 'var(--text-muted)'
-                }}>
-                    {isLogin ? "Don't have an account? " : "Already have an account? "}
-                    <button
-                        onClick={() => setIsLogin(!isLogin)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text)',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            padding: 0
-                        }}
-                    >
-                        {isLogin ? 'Sign Up' : 'Sign In'}
-                    </button>
+                <div style={{ marginTop: '32px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                        {isLogin ? "Don't have an account? " : "Already have an account? "}
+                        <button
+                            onClick={() => setIsLogin(!isLogin)}
+                            style={{ background: 'none', border: 'none', color: 'var(--text)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            {isLogin ? 'Sign Up' : 'Sign In'}
+                        </button>
+                    </p>
                 </div>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                    <a href="/admin" onClick={onClose} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.7 }}>Admin Access</a>
+                <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                    <a href="/admin" onClick={onClose} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'none', opacity: 0.6 }}>Admin access node</a>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

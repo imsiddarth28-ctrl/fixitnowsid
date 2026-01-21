@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Clock, User, Shield, CheckCircle, DollarSign,
-    Star, Bell, LogOut, AlertTriangle, Zap, TrendingUp, Target
+    Activity, Bell, Settings, LogOut, CheckCircle,
+    Clock, Shield, User, MessageSquare, DollarSign,
+    Star, Wallet, History, HelpCircle, Target,
+    Briefcase, AlertTriangle, ArrowUpRight, Menu, X, Zap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import BookingHistory from './BookingHistory';
 import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
@@ -13,20 +16,24 @@ import API_URL from '../config';
 
 const TechnicianDashboard = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [activeView, setActiveView] = useState('overview');
     const [stats, setStats] = useState({
         activeJobs: 0,
         completedToday: 0,
         totalEarnings: 0,
-        rating: 4.8,
+        rating: 4.9,
         pendingRequests: 0
     });
     const [pendingRequests, setPendingRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) setIsSidebarOpen(true);
+            else setIsSidebarOpen(false);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -44,412 +51,291 @@ const TechnicianDashboard = () => {
                 setPendingRequests(data.pendingRequests || []);
             }
         } catch (err) {
-            console.error('Failed to fetch dashboard data:', err);
+            console.error('Tech Dashboard error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const StatCard = ({ icon: Icon, label, value, change }) => (
-        <motion.div
-            whileHover={{ y: -4 }}
-            style={{
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: isMobile ? '1.25rem' : '1.5rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer'
-            }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '10px',
-                    background: '#000000',
+    const NavItem = ({ id, icon: Icon, label, badge }) => {
+        const isActive = activeView === id;
+        return (
+            <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                    setActiveView(id);
+                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                className={isActive ? 'glass' : ''}
+                style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    <Icon size={24} color="#ffffff" strokeWidth={2.5} />
-                </div>
-                {change && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: change > 0 ? '#10b981' : '#ef4444'
+                    gap: '12px',
+                    padding: '12px 18px',
+                    width: '100%',
+                    background: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                    color: isActive ? 'var(--text)' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? '600' : '500',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                }}
+            >
+                <Icon size={20} style={{ opacity: isActive ? 1 : 0.7 }} />
+                <span style={{ flex: 1 }}>{label}</span>
+                {badge > 0 && (
+                    <span style={{
+                        background: 'var(--accent)', color: 'var(--accent-foreground)',
+                        fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', fontWeight: '800'
                     }}>
-                        <TrendingUp size={14} />
-                        {change > 0 ? '+' : ''}{change}%
+                        {badge}
+                    </span>
+                )}
+            </motion.button>
+        );
+    };
+
+    const StatCard = ({ label, value, icon: Icon, trend }) => (
+        <div className="bento-card" style={{ flex: 1, minWidth: '240px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                <div style={{
+                    width: '40px', height: '40px', background: 'var(--bg-tertiary)',
+                    borderRadius: '12px', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: 'var(--text)'
+                }}>
+                    <Icon size={20} />
+                </div>
+                {trend && (
+                    <div className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--success)', height: 'fit-content' }}>
+                        {trend}
                     </div>
                 )}
             </div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', letterSpacing: '0.05em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                {label}
-            </div>
-            <div style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: 700, color: '#000000' }}>
-                {value}
-            </div>
-        </motion.div>
-    );
-
-    const PendingRequestCard = ({ request }) => (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            style={{
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: isMobile ? '1.25rem' : '1.5rem',
-                marginBottom: '1rem'
-            }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                <div>
-                    <div style={{ fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 800, color: '#000000', marginBottom: '0.5rem' }}>
-                        {request.serviceType || 'Service Request'}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                        Customer: {request.customerName || 'Unknown'}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>
-                        {new Date(request.createdAt).toLocaleString()}
-                    </div>
-                </div>
-                <div style={{
-                    padding: '0.5rem 1rem',
-                    background: '#fef3c7',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: '#92400e'
-                }}>
-                    PENDING
-                </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                        flex: 1,
-                        padding: '0.75rem',
-                        borderRadius: '10px',
-                        background: '#000000',
-                        border: 'none',
-                        color: '#ffffff',
-                        fontWeight: 800,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    Accept
-                </motion.button>
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                        flex: 1,
-                        padding: '0.75rem',
-                        borderRadius: '10px',
-                        background: '#ffffff',
-                        border: '1px solid #e5e7eb',
-                        color: '#000000',
-                        fontWeight: 800,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    Reject
-                </motion.button>
-            </div>
-        </motion.div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '500' }}>{label}</div>
+            <div style={{ fontSize: '2rem', color: 'var(--text)', fontWeight: '800', letterSpacing: '-0.03em' }}>{value}</div>
+        </div>
     );
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: '#f9fafb',
-            color: '#000000'
-        }}>
-            {/* Top Bar */}
-            <div style={{
-                background: '#ffffff',
-                borderBottom: '1px solid #e5e7eb',
-                padding: isMobile ? '1rem 1.5rem' : '1.25rem 2rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '1rem',
-                flexWrap: isMobile ? 'wrap' : 'nowrap'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <UserAvatar size={isMobile ? 44 : 48} />
-                    <div>
-                        <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: '#000000' }}>
-                            {user?.name}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 600 }}>
-                            Technician
-                        </div>
-                    </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {stats.pendingRequests > 0 && (
-                        <motion.div
-                            animate={{ scale: [1, 1.05, 1] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
-                            style={{
-                                width: '44px',
-                                height: '44px',
-                                borderRadius: '10px',
-                                background: '#fef3c7',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                position: 'relative'
-                            }}
-                        >
-                            <Bell size={20} color="#92400e" strokeWidth={2.5} />
-                            <div style={{
-                                position: 'absolute',
-                                top: '-4px',
-                                right: '-4px',
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                background: '#000000',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.7rem',
-                                fontWeight: 900,
-                                color: '#ffffff'
-                            }}>
-                                {stats.pendingRequests}
-                            </div>
-                        </motion.div>
-                    )}
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={logout}
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
+            {/* Sidebar */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.aside
+                        initial={{ x: -300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -300, opacity: 0 }}
                         style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '10px',
-                            background: '#000000',
-                            border: 'none',
+                            position: 'fixed',
+                            left: 0, top: 0, bottom: 0,
+                            width: '280px',
+                            background: 'var(--bg-secondary)',
+                            borderRight: '1px solid var(--border)',
+                            padding: '24px',
                             display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
+                            flexDirection: 'column',
+                            zIndex: 1000
                         }}
                     >
-                        <LogOut size={20} color="#ffffff" strokeWidth={2.5} />
-                    </motion.button>
-                </div>
-            </div>
-
-            {/* Navigation */}
-            <div style={{
-                background: '#ffffff',
-                borderBottom: '1px solid #e5e7eb',
-                padding: isMobile ? '0.75rem 1.5rem' : '1rem 2rem',
-                overflowX: 'auto',
-                display: 'flex',
-                gap: '0.5rem'
-            }}>
-                {[
-                    { id: 'overview', label: 'Overview', icon: Activity },
-                    { id: 'requests', label: `Requests ${stats.pendingRequests > 0 ? `(${stats.pendingRequests})` : ''}`, icon: AlertTriangle },
-                    { id: 'history', label: 'History', icon: Clock },
-                    { id: 'profile', label: 'Profile', icon: User },
-                    { id: 'support', label: 'Support', icon: Shield }
-                ].map(tab => {
-                    const Icon = tab.icon;
-                    const isActive = activeView === tab.id;
-                    return (
-                        <motion.button
-                            key={tab.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setActiveView(tab.id)}
-                            style={{
-                                padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
-                                borderRadius: '10px',
-                                background: isActive ? '#000000' : 'transparent',
-                                border: 'none',
-                                color: isActive ? '#ffffff' : '#6b7280',
-                                fontWeight: 700,
-                                fontSize: '0.875rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            <Icon size={16} strokeWidth={2.5} />
-                            {tab.label}
-                        </motion.button>
-                    );
-                })}
-            </div>
-
-            {/* Main Content */}
-            <div style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
-                <AnimatePresence mode="wait">
-                    {activeView === 'overview' && (
-                        <motion.div
-                            key="overview"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {/* Stats Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
-                                gap: '1rem',
-                                marginBottom: '2rem'
-                            }}>
-                                <StatCard icon={Zap} label="Active Jobs" value={stats.activeJobs} change={15} />
-                                <StatCard icon={CheckCircle} label="Completed Today" value={stats.completedToday} change={20} />
-                                <StatCard icon={DollarSign} label="Earnings" value={`$${stats.totalEarnings}`} change={12} />
-                                <StatCard icon={Star} label="Rating" value={stats.rating} change={5} />
-                            </div>
-
-                            {/* Pending Requests Alert */}
-                            {stats.pendingRequests > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    style={{
-                                        background: '#fef3c7',
-                                        border: '1px solid #fde68a',
-                                        borderRadius: '12px',
-                                        padding: isMobile ? '1.25rem' : '1.5rem',
-                                        marginBottom: '2rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '1rem'
-                                    }}
-                                >
-                                    <AlertTriangle size={32} color="#92400e" strokeWidth={2.5} />
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 800, marginBottom: '0.3rem', color: '#000000' }}>
-                                            {stats.pendingRequests} Pending Request{stats.pendingRequests > 1 ? 's' : ''}
-                                        </div>
-                                        <div style={{ fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
-                                            Review and respond to customer requests
-                                        </div>
-                                    </div>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => setActiveView('requests')}
-                                        style={{
-                                            padding: '0.75rem 1.5rem',
-                                            borderRadius: '10px',
-                                            background: '#000000',
-                                            border: 'none',
-                                            color: '#ffffff',
-                                            fontWeight: 800,
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        VIEW
-                                    </motion.button>
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    )}
-
-                    {activeView === 'requests' && (
-                        <motion.div
-                            key="requests"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', color: '#000000' }}>
-                                Pending Requests
-                            </h3>
-                            {pendingRequests.length > 0 ? (
-                                pendingRequests.map(request => (
-                                    <PendingRequestCard key={request.id} request={request} />
-                                ))
-                            ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
-                                    background: '#ffffff',
-                                    border: '1px solid #e5e7eb',
-                                    borderRadius: '12px',
-                                    padding: isMobile ? '2rem 1rem' : '3rem 2rem',
-                                    textAlign: 'center',
-                                    color: '#6b7280'
+                                    width: '32px', height: '32px', background: 'var(--accent)',
+                                    borderRadius: '10px', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', color: 'var(--accent-foreground)'
                                 }}>
-                                    <CheckCircle size={48} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
-                                    <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                                        All Caught Up!
-                                    </div>
-                                    <div style={{ fontSize: '0.875rem' }}>
-                                        No pending requests at the moment
-                                    </div>
+                                    <Zap size={18} />
                                 </div>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
+                                <span style={{ fontSize: '0.65rem', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', fontWeight: '800' }}>PRO</span>
+                            </div>
+                            {window.innerWidth < 1024 && (
+                                <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                    <X size={20} />
+                                </button>
                             )}
-                        </motion.div>
-                    )}
+                        </div>
 
-                    {activeView === 'history' && (
-                        <motion.div
-                            key="history"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <BookingHistory type="technician" />
-                        </motion.div>
-                    )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                            <NavItem id="overview" icon={Activity} label="Status" />
+                            <NavItem id="requests" icon={AlertTriangle} label="Requests" badge={stats.pendingRequests} />
+                            <NavItem id="history" icon={History} label="Completed" />
+                            <NavItem id="wallet" icon={Wallet} label="Earnings" />
+                            <NavItem id="support" icon={HelpCircle} label="Support" />
+                            <NavItem id="profile" icon={Settings} label="Profile" />
+                        </div>
 
-                    {activeView === 'profile' && (
-                        <motion.div
-                            key="profile"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <ProfileSettings />
-                        </motion.div>
-                    )}
+                        <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', background: 'var(--text)', color: 'var(--bg)', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '4px' }}>Go Online</div>
+                            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>Ready to start receiving new service requests?</div>
+                            <button className="btn" style={{ width: '100%', padding: '0.6rem', fontSize: '0.8rem', background: 'var(--bg)', color: 'var(--text)' }}>Go Online</button>
+                        </div>
 
-                    {activeView === 'support' && (
-                        <motion.div
-                            key="support"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <SupportHelp />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }}>
+                            <UserAvatar size={40} />
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Expert Professional</div>
+                            </div>
+                            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
+                                <LogOut size={18} />
+                            </button>
+                        </div>
+                    </motion.aside>
+                )}
+            </AnimatePresence>
+
+            {/* Main Wrapper */}
+            <main style={{
+                flex: 1,
+                marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '280px' : '0',
+                padding: '0 0 100px 0',
+                transition: 'margin 0.3sease'
+            }}>
+                {/* Header */}
+                <header style={{
+                    padding: '24px 40px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100,
+                    background: 'var(--glass-bg)',
+                    backdropFilter: 'blur(12px)',
+                    borderBottom: '1px solid var(--border)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {!isSidebarOpen && (
+                            <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                <Menu size={24} />
+                            </button>
+                        )}
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+                            {activeView.charAt(0).toUpperCase() + activeView.slice(1)}
+                        </h2>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', borderRight: '1px solid var(--border)' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--success)' }}>ONLINE</span>
+                        </div>
+                        <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
+                            {theme === 'dark' ? '☀️' : '🌙'}
+                        </button>
+                    </div>
+                </header>
+
+                <div className="container" style={{ padding: '40px' }}>
+                    <AnimatePresence mode="wait">
+                        {activeView === 'overview' && (
+                            <motion.div
+                                key="overview"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                            >
+                                <div style={{ marginBottom: '40px' }}>
+                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.04em', marginBottom: '8px' }}>
+                                        Welcome back, {user?.name?.split(' ')[0]}
+                                    </h1>
+                                    <p style={{ color: 'var(--text-secondary)' }}>You have {stats.pendingRequests} new service requests waiting for your review.</p>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '48px' }}>
+                                    <StatCard label="Live Jobs" value={stats.activeJobs} icon={Briefcase} trend="ACTIVE" />
+                                    <StatCard label="Finished Today" value={stats.completedToday} icon={CheckCircle} trend="+1" />
+                                    <StatCard label="Total Earnings" value={`$${stats.totalEarnings}`} icon={DollarSign} trend="+15%" />
+                                    <StatCard label="My Rating" value={stats.rating} icon={Star} trend="TOP-TIER" />
+                                </div>
+
+                                <section>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Incoming Requests</h3>
+                                        <button onClick={() => setActiveView('requests')} className="btn btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}>View All</button>
+                                    </div>
+
+                                    {pendingRequests.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {pendingRequests.slice(0, 3).map((req, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    whileHover={{ x: 4 }}
+                                                    className="bento-card"
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '1.5rem 2rem'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                                        <div className="glass" style={{ width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <Activity size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{req.serviceType}</div>
+                                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Customer: {req.customerName} • {req.distance || '2.4 km'} away</div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setActiveView('requests')}
+                                                        className="btn btn-primary"
+                                                        style={{ padding: '0.8rem 1.8rem' }}
+                                                    >
+                                                        Review Request
+                                                    </button>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="glass" style={{
+                                            padding: '80px',
+                                            borderRadius: 'var(--radius-lg)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ color: 'var(--text-muted)', marginBottom: '16px' }}><CheckCircle size={48} style={{ margin: '0 auto' }} /></div>
+                                            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px' }}>All caught up!</h3>
+                                            <p style={{ color: 'var(--text-secondary)' }}>Stay online to receive new opportunities near you.</p>
+                                        </div>
+                                    )}
+                                </section>
+                            </motion.div>
+                        )}
+
+                        {activeView === 'requests' && (
+                            <motion.div key="requests" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '32px' }}>Service Queue</h2>
+                                <div className="glass" style={{ padding: '100px', textAlign: 'center', borderRadius: 'var(--radius-lg)' }}>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Detailed queue management system loading...</p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeView === 'history' && (
+                            <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <BookingHistory type="technician" />
+                            </motion.div>
+                        )}
+
+                        {activeView === 'profile' && (
+                            <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <ProfileSettings />
+                            </motion.div>
+                        )}
+
+                        {activeView === 'support' && (
+                            <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <SupportHelp />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </main>
         </div>
     );
 };

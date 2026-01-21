@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation, MapPin, Clock, Phone, MessageSquare, CheckCircle2, AlertCircle, X, ShieldAlert, ArrowLeft } from 'lucide-react';
+import {
+    Navigation, MapPin, Clock, Phone, MessageSquare,
+    CheckCircle2, AlertCircle, X, ShieldAlert,
+    ArrowLeft, ChevronRight, Activity, Zap, ShieldCheck
+} from 'lucide-react';
 import ServiceReceipt from './ServiceReceipt';
 import Chat from './Chat';
 import GoogleMap from './GoogleMap';
@@ -13,6 +17,13 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
     const [showReceipt, setShowReceipt] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (job) {
@@ -33,8 +44,6 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
         const s = seconds % 60;
         return `${h > 0 ? h + ':' : ''}${m < 10 && h > 0 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
     };
-
-    const isReached = ['arrived', 'in_progress', 'completed'].includes(job.status);
 
     const updateStatus = async (newStatus) => {
         const originalJob = { ...job };
@@ -65,7 +74,6 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
             console.error('Error updating status:', err);
             onStatusUpdate(originalJob);
             if (newStatus === 'completed') setShowReceipt(false);
-            alert(`SATELLITE_LINK_ERROR: ${err.message}`);
         }
     };
 
@@ -81,260 +89,367 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
 
             if (!res.ok) throw new Error('Failed to cancel job');
 
-            const result = await res.json();
-
-            // Close modal
             setShowCancelModal(false);
-
-            // Notify parent component
             onStatusUpdate({ ...job, status: 'cancelled', cancellationData });
 
-            // Show success message
-            alert(`Job cancelled successfully. ${user.role === 'customer' ? 'The technician has been notified.' : 'The customer has been notified.'}`);
-
-            // Go back to dashboard
             if (onBack) {
-                setTimeout(() => onBack(), 1000);
+                setTimeout(() => onBack(), 2000);
             }
         } catch (err) {
             console.error('Cancel job failed:', err);
-            alert('Failed to cancel job. Please try again.');
         }
     };
 
+    const StatusItem = ({ label, active, done, idx }) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
+            <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '12px',
+                background: done ? 'var(--text)' : active ? 'var(--text)' : 'var(--bg-tertiary)',
+                color: done || active ? 'var(--bg)' : 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                zIndex: 2,
+                border: '1px solid var(--border)'
+            }}>
+                {done ? <CheckCircle2 size={16} /> : <span style={{ fontSize: '0.75rem', fontWeight: '900' }}>{idx + 1}</span>}
+            </div>
+            <div style={{
+                fontSize: '0.9rem',
+                fontWeight: active ? '900' : '600',
+                color: active ? 'var(--text)' : done ? 'var(--text)' : 'var(--text-secondary)',
+                letterSpacing: active ? '0.02em' : '0',
+                transition: 'all 0.3s ease'
+            }}>
+                {label.toUpperCase()}
+            </div>
+            {active && (
+                <motion.div
+                    layoutId="status-indicator"
+                    style={{ position: 'absolute', right: 0, width: '6px', height: '6px', borderRadius: '50%', background: 'var(--text)' }}
+                />
+            )}
+        </div>
+    );
+
     return (
-        <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Top Toolbar */}
-            <header style={{ padding: '1.5rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {user.role === 'customer' && onBack && (
-                        <button
+        <div style={{
+            background: 'var(--bg)',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            color: 'var(--text)',
+            overflow: 'hidden'
+        }}>
+            {/* Mission Header */}
+            <header className="glass" style={{
+                padding: '24px 40px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid var(--border)',
+                zIndex: 100
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    {onBack && (
+                        <motion.button
+                            whileHover={{ scale: 1.1, x: -4 }}
+                            whileTap={{ scale: 0.9 }}
                             onClick={onBack}
+                            className="glass"
                             style={{
-                                background: 'transparent',
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '14px',
                                 border: '1px solid var(--border)',
-                                padding: '0.6rem',
-                                borderRadius: '0.8rem',
-                                cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: 'var(--text)',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = 'var(--card)'}
-                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                            title="Back to Dashboard"
-                        >
-                            <ArrowLeft size={18} />
-                        </button>
-                    )}
-                    <div style={{ background: 'var(--text)', color: 'var(--bg)', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontWeight: 900, fontSize: '0.7rem' }}>SECURE LINE</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, opacity: 0.6 }}>JOB_ID: #{job._id.slice(-8).toUpperCase()}</div>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button onClick={() => setShowChat(!showChat)} style={{ background: showChat ? 'var(--text)' : 'transparent', color: showChat ? 'var(--bg)' : 'var(--text)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '0.8rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s ease' }}>
-                        <MessageSquare size={16} /> CHAT
-                    </button>
-                    {job.status !== 'completed' && (
-                        <button
-                            onClick={() => setShowCancelModal(true)}
-                            style={{
-                                background: 'transparent',
-                                color: '#ef4444',
-                                border: '1px solid #ef4444',
-                                padding: '0.6rem 1.2rem',
-                                borderRadius: '0.8rem',
                                 cursor: 'pointer',
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.target.style.background = '#ef4444';
-                                e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.background = 'transparent';
-                                e.target.style.color = '#ef4444';
+                                color: 'var(--text)'
                             }}
                         >
-                            <X size={16} /> CANCEL JOB
-                        </button>
+                            <ArrowLeft size={20} />
+                        </motion.button>
                     )}
-                    {user.role === 'technician' && job.status === 'completed' && (
-                        <button onClick={() => onStatusUpdate(null)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.8rem', cursor: 'pointer', fontWeight: 700 }}>
-                            EXIT MISSION
-                        </button>
+                    <div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '-0.04em' }}>
+                            {job.serviceType?.toUpperCase()}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', letterSpacing: '0.1em' }}>
+                            REF_ID: {job._id.slice(-12).toUpperCase()}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px' }}>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowChat(!showChat)}
+                        className={`btn ${showChat ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ padding: '12px 24px', display: 'flex', gap: '12px', alignItems: 'center' }}
+                    >
+                        <MessageSquare size={18} />
+                        <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>SYNC_COMM</span>
+                    </motion.button>
+                    {job.status !== 'completed' && job.status !== 'cancelled' && (
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowCancelModal(true)}
+                            className="btn btn-secondary"
+                            style={{ color: 'var(--error)', borderColor: 'rgba(255, 59, 48, 0.2)', padding: '12px 24px' }}
+                        >
+                            <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>TERMINATE</span>
+                        </motion.button>
                     )}
                 </div>
             </header>
 
-            {/* Tracking Field */}
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
-                {/* Main Content Area (Map + HUD) - Responsive layout */}
+            {/* Content Core */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                overflow: 'hidden'
+            }}>
+                {/* Tactical HUD */}
                 <div style={{
-                    flex: showChat ? (window.innerWidth < 768 ? '0 0 50%' : 3) : 1,
-                    position: 'relative',
+                    width: isMobile ? '100%' : '440px',
+                    background: 'var(--bg-secondary)',
+                    borderRight: isMobile ? 'none' : '1px solid var(--border)',
+                    borderBottom: isMobile ? '1px solid var(--border)' : 'none',
                     display: 'flex',
-                    transition: 'flex 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                    minHeight: window.innerWidth < 768 ? '50%' : 'auto'
+                    flexDirection: 'column',
+                    zIndex: 10,
+                    padding: '40px'
                 }}>
-                    {/* HUD Overlay */}
-                    <motion.div
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        style={{
-                            position: 'absolute',
-                            top: window.innerWidth < 768 ? '1rem' : '2rem',
-                            left: window.innerWidth < 768 ? '1rem' : '2rem',
-                            width: window.innerWidth < 768 ? 'calc(100% - 2rem)' : (showChat ? '280px' : '320px'),
-                            maxWidth: window.innerWidth < 768 ? '100%' : '320px',
-                            background: 'rgba(15, 15, 15, 0.95)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '1.5rem',
-                            padding: window.innerWidth < 768 ? '1rem' : (showChat ? '1.5rem' : '1.8rem'),
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            zIndex: 10,
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                            color: 'white',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <div style={{ fontSize: '0.6rem', color: '#3b82f6', fontWeight: 900, letterSpacing: '0.2em', marginBottom: '1rem' }}>MISSION_PROFILE</div>
-                        <h2 style={{ fontSize: window.innerWidth < 768 ? '1rem' : (showChat ? '1.2rem' : '1.4rem'), fontWeight: 900, marginBottom: '1.5rem', letterSpacing: '-0.02em', transition: 'font-size 0.3s ease' }}>{job.serviceType?.toUpperCase()}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '48px' }}>
+                        <div style={{
+                            width: '56px',
+                            height: '56px',
+                            background: 'var(--text)',
+                            borderRadius: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--bg)',
+                            boxShadow: '0 12px 24px rgba(0,0,0,0.1)'
+                        }}>
+                            <Zap size={28} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>OPERATIONAL_STATUS</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{job.status.replace('_', ' ')}</div>
+                        </div>
+                    </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.05)', borderRadius: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <MapPin size={20} color="#3b82f6" />
-                                </div>
-                                <div style={{ overflow: 'hidden', flex: 1 }}>
-                                    <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>DESTINATION</div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.location?.address || 'Sector 01'}</div>
-                                </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                        <div style={{ display: 'flex', gap: '20px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                                <MapPin size={20} />
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.05)', borderRadius: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Clock size={20} color="#10b981" />
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>ACTIVE_TIME</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, fontFamily: 'monospace' }}>{formatTime(elapsedSeconds)}</div>
-                                </div>
+                            <div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>TARGET_COORDINATES</div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: '600', lineHeight: '1.4' }}>{job.location?.address}</div>
                             </div>
                         </div>
+                        <div style={{ display: 'flex', gap: '20px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                                <Clock size={20} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>CHRONO_ELAPSED</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{formatTime(elapsedSeconds)}</div>
+                            </div>
+                        </div>
+                    </div>
 
-                        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.8rem' }}>
+                    {/* Participant Profile */}
+                    <div className="glass" style={{ marginTop: '48px', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                background: 'var(--text)',
+                                borderRadius: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--bg)',
+                                fontSize: '1.25rem',
+                                fontWeight: '900'
+                            }}>
                                 {(user.role === 'customer' ? (job.technicianId?.name || 'T') : (job.customerId?.name || 'C')).charAt(0).toUpperCase()}
                             </div>
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.role === 'customer' ? (job.technicianId?.name || 'Analyst') : (job.customerId?.name || 'Direct Line')}</div>
-                                <div style={{ fontSize: '0.6rem', color: '#10b981', fontWeight: 900 }}>ENCRYPTED_SIGNAL</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.05em' }}>
+                                    {user.role === 'customer' ? 'TECHNICIAN_LINK' : 'CLIENT_IDENTITY'}
+                                </div>
+                                <div style={{ fontSize: '1rem', fontWeight: '800' }}>{user.role === 'customer' ? (job.technicianId?.name || 'Assigned Pro') : (job.customerId?.name || 'Authorized Client')}</div>
                             </div>
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-tertiary)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}
+                            >
+                                <Phone size={18} />
+                            </motion.button>
                         </div>
-                    </motion.div>
-
-                    {/* Main Ground View (Map) */}
-                    <div style={{ flex: 1, position: 'relative', background: '#050505' }}>
-                        <GoogleMap job={job} user={user} />
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%)', pointerEvents: 'none', zIndex: 1 }}></div>
                     </div>
+
+                    {/* Progress Matrix */}
+                    <div style={{ marginTop: '56px' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '24px', letterSpacing: '0.1em' }}>PROGRESS_MATRIX</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: 'var(--border)', zIndex: 1 }} />
+                            {[
+                                { id: 'accepted', label: 'Accepted' },
+                                { id: 'on_way', label: 'En Route' },
+                                { id: 'arrived', label: 'On Location' },
+                                { id: 'in_progress', label: 'Processing' },
+                                { id: 'completed', label: 'Deployment Final' }
+                            ].map((step, idx) => {
+                                const statuses = ['accepted', 'on_way', 'arrived', 'in_progress', 'completed'];
+                                const currentIdx = statuses.indexOf(job.status);
+                                return (
+                                    <StatusItem
+                                        key={step.id}
+                                        label={step.label}
+                                        idx={idx}
+                                        active={idx === currentIdx}
+                                        done={idx < currentIdx}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Command Interface (Technician Only) */}
+                    {user.role === 'technician' && job.status !== 'completed' && job.status !== 'cancelled' && (
+                        <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={job.status}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                >
+                                    {job.status === 'accepted' && (
+                                        <button onClick={() => updateStatus('on_way')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>INITIALIZE_TRANSIT</button>
+                                    )}
+                                    {job.status === 'on_way' && (
+                                        <button onClick={() => updateStatus('arrived')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>SIGNAL_ARRIVAL</button>
+                                    )}
+                                    {job.status === 'arrived' && (
+                                        <button onClick={() => updateStatus('in_progress')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>BEGIN_DEPLOYMENT</button>
+                                    )}
+                                    {job.status === 'in_progress' && (
+                                        <button onClick={() => updateStatus('completed')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>FINALIZE_MISSION</button>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
 
-                {/* Chat Sidebar - Responsive */}
-                <AnimatePresence>
-                    {showChat && (
-                        <motion.div
-                            initial={{
-                                [window.innerWidth < 768 ? 'height' : 'width']: 0,
-                                opacity: 0
-                            }}
-                            animate={{
-                                [window.innerWidth < 768 ? 'height' : 'width']: window.innerWidth < 768 ? '50%' : '25%',
-                                opacity: 1
-                            }}
-                            exit={{
-                                [window.innerWidth < 768 ? 'height' : 'width']: 0,
-                                opacity: 0
-                            }}
-                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            style={{
-                                minWidth: window.innerWidth < 768 ? 'auto' : '300px',
-                                maxWidth: window.innerWidth < 768 ? '100%' : '400px',
-                                minHeight: window.innerWidth < 768 ? '50%' : 'auto',
-                                background: 'var(--card)',
-                                borderLeft: window.innerWidth < 768 ? 'none' : '1px solid var(--border)',
-                                borderTop: window.innerWidth < 768 ? '1px solid var(--border)' : 'none',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                overflow: 'hidden'
-                            }}
-                        >
-                            <Chat
-                                jobId={job._id}
-                                receiverId={user.role === 'customer'
-                                    ? (job.technicianId?._id || job.technicianId)
-                                    : (job.customerId?._id || job.customerId)}
-                                onClose={() => setShowChat(false)}
-                                isCompact={true}
+                {/* Perspective - Map Area */}
+                <div style={{
+                    flex: 1,
+                    position: 'relative',
+                    background: 'var(--bg-tertiary)',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    <GoogleMap job={job} user={user} />
+
+                    {/* Floating HUD Elements */}
+                    <div className="glass" style={{
+                        position: 'absolute',
+                        top: '32px',
+                        left: '32px',
+                        padding: '16px 24px',
+                        borderRadius: '20px',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{ position: 'relative', width: '10px', height: '10px' }}>
+                            <motion.div
+                                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'var(--success)' }}
                             />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <div style={{ position: 'absolute', inset: '1px', borderRadius: '50%', background: 'var(--success)', border: '2px solid white' }} />
+                        </div>
+                        <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID_ACTIVE</span>
+                    </div>
+
+                    {/* Chat Slide-over */}
+                    <AnimatePresence>
+                        {showChat && (
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    width: isMobile ? '100%' : '500px',
+                                    background: 'var(--bg)',
+                                    zIndex: 200,
+                                    boxShadow: '-20px 0 60px rgba(0,0,0,0.15)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    borderLeft: '1px solid var(--border)'
+                                }}
+                            >
+                                <div style={{ flex: 1, position: 'relative' }}>
+                                    <Chat
+                                        jobId={job._id}
+                                        otherUser={user.role === 'customer' ? job.technicianId : job.customerId}
+                                        isCompact={true}
+                                    />
+                                    <motion.button
+                                        whileHover={{ scale: 1.1, rotate: 90 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setShowChat(false)}
+                                        className="glass"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '24px',
+                                            right: '24px',
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--border)',
+                                            cursor: 'pointer',
+                                            zIndex: 300,
+                                            color: 'var(--text)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <X size={20} />
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
-            {/* Tactical Action Bar */}
-            <footer style={{ padding: '2rem 3rem', background: 'var(--card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '4rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.1em' }}>CURRENT_PHASE</span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>{job.status.toUpperCase().replace('_', ' ')}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        {['accepted', 'arrived', 'in_progress', 'completed'].map((s, i) => (
-                            <div key={s} style={{ width: 40, height: 4, background: ['accepted', 'arrived', 'in_progress', 'completed'].indexOf(job.status) >= i ? '#10b981' : 'rgba(255,255,255,0.05)', borderRadius: 2 }}></div>
-                        ))}
-                    </div>
-                </div>
-
-                {user.role === 'technician' && job.status !== 'completed' && (
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        {job.status === 'accepted' && (
-                            <button onClick={() => updateStatus('arrived')} style={{ padding: '1rem 2.5rem', background: 'white', color: 'black', borderRadius: '1rem', border: 'none', fontWeight: 900, cursor: 'pointer', boxShadow: '0 0 20px rgba(255,255,255,0.1)' }}>ARRIVAL SIGNAL</button>
-                        )}
-                        {job.status === 'arrived' && (
-                            <button onClick={() => updateStatus('in_progress')} style={{ padding: '1rem 2.5rem', background: '#3b82f6', color: 'white', borderRadius: '1rem', border: 'none', fontWeight: 900, cursor: 'pointer' }}>COMMENCE OPS</button>
-                        )}
-                        {job.status === 'in_progress' && (
-                            <button onClick={() => updateStatus('completed')} style={{ padding: '1rem 2.5rem', background: '#10b981', color: 'white', borderRadius: '1rem', border: 'none', fontWeight: 900, cursor: 'pointer' }}>COMPLETE MISSION</button>
-                        )}
-                    </div>
-                )}
-
-                {user.role === 'customer' && job.status === 'completed' && (
-                    <div style={{ color: '#10b981', fontWeight: 900, fontSize: '0.9rem' }}>MISSION COMPLETE. CHECK ARCHIVES.</div>
-                )}
-            </footer>
-
-            <AnimatePresence>
-                {showReceipt && (
-                    <ServiceReceipt job={job} onClose={() => setShowReceipt(false)} />
-                )}
-            </AnimatePresence>
-
-            {/* Location Tracker for Technicians */}
-            {user.role === 'technician' && job.status !== 'completed' && (
-                <LocationTracker
-                    jobId={job._id}
-                    isActive={job.status === 'in-progress' || job.status === 'accepted'}
-                />
-            )}
-
-            {/* Cancel Job Modal */}
+            {/* Sub-Modules */}
             <AnimatePresence>
                 {showCancelModal && (
                     <CancelJobModal
@@ -344,7 +459,15 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                         onClose={() => setShowCancelModal(false)}
                     />
                 )}
+                {showReceipt && (
+                    <ServiceReceipt job={job} onClose={() => setShowReceipt(false)} />
+                )}
             </AnimatePresence>
+
+            {/* Tactical Tracker Process */}
+            {user.role === 'technician' && (job.status === 'on_way' || job.status === 'in_progress') && (
+                <LocationTracker jobId={job._id} isActive={true} />
+            )}
         </div>
     );
 };

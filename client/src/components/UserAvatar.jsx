@@ -1,20 +1,22 @@
 import { useAuth } from '../context/AuthContext';
 
-const UserAvatar = ({ size = 40, fontSize = '1rem', user: propUser, style = {} }) => {
+const UserAvatar = ({ size = 40, user: propUser, style = {} }) => {
     const { user: contextUser } = useAuth();
     const user = propUser || contextUser;
 
     if (!user) return null;
 
-    const avatarStyle = {
+    const baseStyle = {
         width: `${size}px`,
         height: `${size}px`,
-        borderRadius: '50%',
+        borderRadius: size > 100 ? '24px' : '14px', // Modern squircle for smaller avatars
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontWeight: 900,
-        color: 'white',
+        fontWeight: '700',
+        fontSize: `${size * 0.4}px`,
+        overflow: 'hidden',
+        flexShrink: 0,
         ...style
     };
 
@@ -24,9 +26,9 @@ const UserAvatar = ({ size = 40, fontSize = '1rem', user: propUser, style = {} }
                 src={user.profilePhoto}
                 alt={user.name}
                 style={{
-                    ...avatarStyle,
+                    ...baseStyle,
                     objectFit: 'cover',
-                    border: '2px solid #3b82f6'
+                    border: '1px solid rgba(0,0,0,0.05)'
                 }}
             />
         );
@@ -34,11 +36,13 @@ const UserAvatar = ({ size = 40, fontSize = '1rem', user: propUser, style = {} }
 
     return (
         <div style={{
-            ...avatarStyle,
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-            fontSize
+            ...baseStyle,
+            background: '#1d1d1f',
+            color: '#fff',
+            textTransform: 'uppercase',
+            letterSpacing: '-0.02em'
         }}>
-            {user.name?.charAt(0).toUpperCase()}
+            {user.name?.charAt(0)}
         </div>
     );
 };

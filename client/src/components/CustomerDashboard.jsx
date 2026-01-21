@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Activity, Clock, User, Shield, CheckCircle, DollarSign,
-    Star, Bell, LogOut, Plus, MessageSquare, Calendar, Settings,
-    TrendingUp, ArrowRight, Zap
+    Activity, Bell, Settings, LogOut, Plus,
+    ArrowRight, CheckCircle, Clock, Shield,
+    User, MessageSquare, Calendar, DollarSign,
+    Star, Wallet, History, HelpCircle, Search, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import BookingHistory from './BookingHistory';
 import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
@@ -14,6 +16,7 @@ import API_URL from '../config';
 
 const CustomerDashboard = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [activeView, setActiveView] = useState('overview');
     const [stats, setStats] = useState({
         totalBookings: 0,
@@ -22,10 +25,13 @@ const CustomerDashboard = () => {
         totalSpent: 0
     });
     const [loading, setLoading] = useState(true);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) setIsSidebarOpen(true);
+            else setIsSidebarOpen(false);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -42,313 +48,272 @@ const CustomerDashboard = () => {
                 setStats(data.stats || stats);
             }
         } catch (err) {
-            console.error('Failed to fetch dashboard data:', err);
+            console.error('Dashboard error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const StatCard = ({ icon: Icon, label, value, change }) => (
-        <motion.div
-            whileHover={{ y: -4 }}
-            style={{
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: isMobile ? '1.25rem' : '1.5rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer'
-            }}
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '10px',
-                    background: '#000000',
+    const NavItem = ({ id, icon: Icon, label }) => {
+        const isActive = activeView === id;
+        return (
+            <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                    setActiveView(id);
+                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                className={isActive ? 'glass' : ''}
+                style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    gap: '12px',
+                    padding: '12px 18px',
+                    width: '100%',
+                    background: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                    color: isActive ? 'var(--text)' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? '600' : '500',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                }}
+            >
+                <Icon size={20} style={{ opacity: isActive ? 1 : 0.7 }} />
+                <span>{label}</span>
+            </motion.button>
+        );
+    };
+
+    const StatCard = ({ label, value, icon: Icon, trend }) => (
+        <div className="bento-card" style={{ flex: 1, minWidth: '240px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                <div style={{
+                    width: '40px', height: '40px', background: 'var(--bg-tertiary)',
+                    borderRadius: '12px', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: 'var(--text)'
                 }}>
-                    <Icon size={24} color="#ffffff" strokeWidth={2.5} />
+                    <Icon size={20} />
                 </div>
-                {change && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: change > 0 ? '#10b981' : '#ef4444'
-                    }}>
-                        <TrendingUp size={14} />
-                        {change > 0 ? '+' : ''}{change}%
+                {trend && (
+                    <div className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text)', height: 'fit-content' }}>
+                        {trend}
                     </div>
                 )}
             </div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', letterSpacing: '0.05em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                {label}
-            </div>
-            <div style={{ fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: 700, color: '#000000' }}>
-                {value}
-            </div>
-        </motion.div>
-    );
-
-    const QuickAction = ({ icon: Icon, label, onClick }) => (
-        <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            style={{
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: isMobile ? '1rem' : '1.25rem',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.75rem',
-                transition: 'all 0.3s ease',
-                width: '100%'
-            }}
-        >
-            <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: '#000000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <Icon size={28} color="#ffffff" strokeWidth={2.5} />
-            </div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#000000', textAlign: 'center' }}>
-                {label}
-            </div>
-        </motion.button>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '500' }}>{label}</div>
+            <div style={{ fontSize: '2rem', color: 'var(--text)', fontWeight: '800', letterSpacing: '-0.03em' }}>{value}</div>
+        </div>
     );
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: '#f9fafb',
-            color: '#000000'
-        }}>
-            {/* Top Bar */}
-            <div style={{
-                background: '#ffffff',
-                borderBottom: '1px solid #e5e7eb',
-                padding: isMobile ? '1rem 1.5rem' : '1.25rem 2rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '1rem',
-                flexWrap: isMobile ? 'wrap' : 'nowrap'
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
+            {/* Sidebar */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.aside
+                        initial={{ x: -300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -300, opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            left: 0, top: 0, bottom: 0,
+                            width: '280px',
+                            background: 'var(--bg-secondary)',
+                            borderRight: '1px solid var(--border)',
+                            padding: '24px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            zIndex: 1000
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: '32px', height: '32px', background: 'var(--accent)',
+                                    borderRadius: '10px', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', color: 'var(--accent-foreground)'
+                                }}>
+                                    <Activity size={18} />
+                                </div>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
+                            </div>
+                            {window.innerWidth < 1024 && (
+                                <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                    <X size={20} />
+                                </button>
+                            )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                            <NavItem id="overview" icon={Activity} label="Overview" />
+                            <NavItem id="history" icon={History} label="My Bookings" />
+                            <NavItem id="wallet" icon={Wallet} label="Wallet & Pay" />
+                            <NavItem id="support" icon={HelpCircle} label="Help Center" />
+                            <NavItem id="profile" icon={Settings} label="Settings" />
+                        </div>
+
+                        <div className="glass" style={{ padding: '20px', borderRadius: 'var(--radius-lg)', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px' }}>Pro Support</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Get priority assistance for any service issues.</div>
+                            <button className="btn btn-primary" style={{ width: '100%', padding: '0.6rem', fontSize: '0.8rem' }}>Contact Us</button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }}>
+                            <UserAvatar size={40} />
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Customer Account</div>
+                            </div>
+                            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
+                                <LogOut size={18} />
+                            </button>
+                        </div>
+                    </motion.aside>
+                )}
+            </AnimatePresence>
+
+            {/* Main Wrapper */}
+            <main style={{
+                flex: 1,
+                marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '280px' : '0',
+                padding: '0 0 100px 0',
+                transition: 'margin 0.3sease'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <UserAvatar size={isMobile ? 44 : 48} />
-                    <div>
-                        <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: '#000000' }}>
-                            {user?.name}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 600 }}>
-                            Customer
-                        </div>
+                {/* Header */}
+                <header style={{
+                    padding: '24px 40px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100,
+                    background: 'var(--glass-bg)',
+                    backdropFilter: 'blur(12px)',
+                    borderBottom: '1px solid var(--border)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {!isSidebarOpen && (
+                            <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                <Menu size={24} />
+                            </button>
+                        )}
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+                            {activeView.charAt(0).toUpperCase() + activeView.slice(1)}
+                        </h2>
                     </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '10px',
-                            background: '#f3f4f6',
-                            border: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <Bell size={20} color="#000000" strokeWidth={2.5} />
-                    </motion.button>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={logout}
-                        style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '10px',
-                            background: '#000000',
-                            border: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <LogOut size={20} color="#ffffff" strokeWidth={2.5} />
-                    </motion.button>
-                </div>
-            </div>
 
-            {/* Navigation */}
-            <div style={{
-                background: '#ffffff',
-                borderBottom: '1px solid #e5e7eb',
-                padding: isMobile ? '0.75rem 1.5rem' : '1rem 2rem',
-                overflowX: 'auto',
-                display: 'flex',
-                gap: '0.5rem'
-            }}>
-                {[
-                    { id: 'overview', label: 'Overview', icon: Activity },
-                    { id: 'history', label: 'History', icon: Clock },
-                    { id: 'profile', label: 'Profile', icon: User },
-                    { id: 'support', label: 'Support', icon: Shield }
-                ].map(tab => {
-                    const Icon = tab.icon;
-                    const isActive = activeView === tab.id;
-                    return (
-                        <motion.button
-                            key={tab.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setActiveView(tab.id)}
-                            style={{
-                                padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
-                                borderRadius: '10px',
-                                background: isActive ? '#000000' : 'transparent',
-                                border: 'none',
-                                color: isActive ? '#ffffff' : '#6b7280',
-                                fontWeight: 700,
-                                fontSize: '0.875rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            <Icon size={16} strokeWidth={2.5} />
-                            {tab.label}
-                        </motion.button>
-                    );
-                })}
-            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
+                            {theme === 'dark' ? '☀️' : '🌙'}
+                        </button>
+                        <button className="btn btn-primary">
+                            <Plus size={18} />
+                            <span className="desktop-only">New Booking</span>
+                        </button>
+                    </div>
+                </header>
 
-            {/* Main Content */}
-            <div style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
-                <AnimatePresence mode="wait">
-                    {activeView === 'overview' && (
-                        <motion.div
-                            key="overview"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {/* Stats Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
-                                gap: '1rem',
-                                marginBottom: '2rem'
-                            }}>
-                                <StatCard icon={Zap} label="Active Jobs" value={stats.activeJobs} change={12} />
-                                <StatCard icon={CheckCircle} label="Completed" value={stats.completedJobs} change={8} />
-                                <StatCard icon={DollarSign} label="Total Spent" value={`$${stats.totalSpent}`} change={-5} />
-                                <StatCard icon={Star} label="Avg Rating" value="4.8" change={3} />
-                            </div>
-
-                            {/* Quick Actions */}
-                            <div style={{ marginBottom: '2rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: '#000000' }}>
-                                    Quick Actions
-                                </h3>
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(140px, 1fr))',
-                                    gap: '1rem'
-                                }}>
-                                    <QuickAction icon={Plus} label="New Booking" onClick={() => { }} />
-                                    <QuickAction icon={MessageSquare} label="Messages" onClick={() => { }} />
-                                    <QuickAction icon={Calendar} label="Schedule" onClick={() => { }} />
-                                    <QuickAction icon={Settings} label="Settings" onClick={() => setActiveView('profile')} />
+                <div className="container" style={{ padding: '40px' }}>
+                    <AnimatePresence mode="wait">
+                        {activeView === 'overview' && (
+                            <motion.div
+                                key="overview"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                            >
+                                <div style={{ marginBottom: '40px' }}>
+                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.04em', marginBottom: '8px' }}>
+                                        Hello, {user?.name?.split(' ')[0]}
+                                    </h1>
+                                    <p style={{ color: 'var(--text-secondary)' }}>Everything is running smoothly. How can we help today?</p>
                                 </div>
-                            </div>
 
-                            {/* Recent Activity */}
-                            <div>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: '#000000' }}>
-                                    Recent Activity
-                                </h3>
-                                <div style={{
-                                    background: '#ffffff',
-                                    border: '1px solid #e5e7eb',
-                                    borderRadius: '12px',
-                                    padding: isMobile ? '2rem 1rem' : '3rem 2rem',
-                                    textAlign: 'center',
-                                    color: '#6b7280'
-                                }}>
-                                    <Activity size={48} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
-                                    <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                                        No recent activity
-                                    </div>
-                                    <div style={{ fontSize: '0.875rem' }}>
-                                        Your activity will appear here
-                                    </div>
+                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '48px' }}>
+                                    <StatCard
+                                        label="Live Tracking"
+                                        value={stats.activeJobs}
+                                        icon={Activity}
+                                        trend={stats.trends?.active || "OFFLINE"}
+                                    />
+                                    <StatCard
+                                        label="Fulfilled Jobs"
+                                        value={stats.completedJobs}
+                                        icon={CheckCircle}
+                                        trend={stats.trends?.completed || "+0"}
+                                    />
+                                    <StatCard
+                                        label="Wallet Balance"
+                                        value={`$${stats.totalSpent}`}
+                                        icon={Wallet}
+                                        trend={stats.trends?.spent || "STANDARD"}
+                                    />
+                                    <StatCard
+                                        label="Trust Score"
+                                        value={stats.trends?.trust?.score || "5.0"}
+                                        icon={Star}
+                                        trend={stats.trends?.trust?.label || "VERIFIED"}
+                                    />
                                 </div>
-                            </div>
-                        </motion.div>
-                    )}
 
-                    {activeView === 'history' && (
-                        <motion.div
-                            key="history"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <BookingHistory type="customer" />
-                        </motion.div>
-                    )}
+                                <section>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Quick Access</h3>
+                                    </div>
+                                    <div className="bento-grid">
+                                        {[
+                                            { title: 'Emergency', desc: 'Instant dispatch', icon: Shield, col: 'span 4' },
+                                            { title: 'Find Pros', desc: 'Browse experts', icon: Search, col: 'span 4' },
+                                            { title: 'Messages', desc: 'Chat with team', icon: MessageSquare, col: 'span 4' },
+                                            { title: 'History', desc: 'Recent receipts', icon: History, col: 'span 6' },
+                                            { title: 'Settings', desc: 'Profile & privacy', icon: Settings, col: 'span 6' }
+                                        ].map((action, i) => (
+                                            <motion.div
+                                                key={i}
+                                                whileHover={{ y: -4 }}
+                                                className="bento-card"
+                                                style={{
+                                                    gridColumn: action.col,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <div style={{ marginBottom: '16px', color: 'var(--text)' }}><action.icon size={28} /></div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px' }}>{action.title}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{action.desc}</div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </section>
+                            </motion.div>
+                        )}
 
-                    {activeView === 'profile' && (
-                        <motion.div
-                            key="profile"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <ProfileSettings />
-                        </motion.div>
-                    )}
+                        {activeView === 'history' && (
+                            <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <BookingHistory type="customer" />
+                            </motion.div>
+                        )}
 
-                    {activeView === 'support' && (
-                        <motion.div
-                            key="support"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <SupportHelp />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        {activeView === 'profile' && (
+                            <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <ProfileSettings />
+                            </motion.div>
+                        )}
+
+                        {activeView === 'support' && (
+                            <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <SupportHelp />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </main>
         </div>
     );
 };

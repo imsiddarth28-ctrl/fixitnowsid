@@ -299,6 +299,154 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
+// Alias for /api/bookings/create
+app.post('/api/bookings/create', async (req, res) => {
+  try {
+    const { technicianId, customerId, status } = req.body;
+
+    // Check for active booking first
+    const activeBooking = await Job.findOne({
+      customerId,
+      status: { $in: ['pending', 'accepted', 'on_way', 'arrived', 'in_progress'] }
+    });
+
+    if (activeBooking) {
+      return res.status(400).json({ message: 'You already have an active booking.' });
+    }
+
+    const job = new Job({ ...req.body });
+    await job.save();
+
+    // Trigger notification to technician
+    await pusher.trigger(`user-${technicianId}`, 'new_job_request', { job });
+
+    res.status(201).json(job);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Customer Dashboard Stats
+app.get('/api/customers/:id/dashboard', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [activeJobs, completedJobs, recentJobs, allJobs] = await Promise.all([
+      Job.countDocuments({ customerId: userId, status: { $in: ['pending', 'accepted', 'on_way', 'arrived', 'in_progress'] } }),
+      Job.countDocuments({ customerId: userId, status: 'completed' }),
+      Job.countDocuments({ customerId: userId, status: 'completed', updatedAt: { $gte: thirtyDaysAgo } }),
+      Job.find({ customerId: userId, status: 'completed' })
+    ]);
+
+    const totalSpent = allJobs.reduce((acc, job) => acc + (job.price || 0), 0);
+
+    // Dynamic trust score logic (placeholder)
+    const trustScore = 4.9;
+    const trustLabel = "EXCELLENT";
+
+    const stats = {
+      activeJobs,
+      completedJobs,
+      totalSpent,
+      trends: {
+        active: activeJobs > 0 ? "LIVE" : "DORMANT",
+        completed: recentJobs > 0 ? `+${recentJobs}` : "0",
+        spent: totalSpent > 500 ? "PREMIUM" : "BASIC",
+        trust: { score: trustScore, label: trustLabel }
+      }
+    };
+    res.json({ stats });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Technician Dashboard Stats
+app.get('/api/technicians/:id/dashboard', async (req, res) => {
+  try {
+    const techId = req.params.id;
+    const stats = {
+      activeJobs: await Job.countDocuments({ technicianId: techId, status: { $in: ['accepted', 'on_way', 'arrived', 'in_progress'] } }),
+      completedToday: await Job.countDocuments({
+        technicianId: techId,
+        status: 'completed',
+        updatedAt: { $gte: new Date().setHours(0, 0, 0, 0) }
+      }),
+      totalEarnings: (await Job.find({ technicianId: techId, status: 'completed' })).reduce((acc, job) => acc + (job.price || 0), 0),
+      pendingRequests: await Job.countDocuments({ technicianId: techId, status: 'pending' })
+    };
+
+    const pendingRequests = await Job.find({ technicianId: techId, status: 'pending' })
+      .populate('customerId', 'name')
+      .sort({ createdAt: -1 });
+
+    res.json({ stats, pendingRequests });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Check Customer Active Booking
+app.get('/api/customers/:id/active-booking', async (req, res) => {
+  try {
+    const job = await Job.findOne({
+      customerId: req.params.id,
+      status: { $in: ['pending', 'accepted', 'on_way', 'arrived', 'in_progress'] }
+    });
+    res.json({ hasActiveBooking: !!job, job });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Technician Availability & Busy Status
+app.get('/api/technicians/:id/availability', async (req, res) => {
+  try {
+    const tech = await Technician.findById(req.params.id);
+    const activeJob = await Job.findOne({
+      technicianId: req.params.id,
+      status: { $in: ['accepted', 'on_way', 'arrived', 'in_progress'] }
+    });
+
+    res.json({
+      isAvailable: tech.isAvailable,
+      isBusy: !!activeJob,
+      estimatedFreeTime: activeJob ? new Date(Date.now() + 45 * 60000) : null // Placeholder 45 mins
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Cancel Job
+app.post('/api/jobs/:jobId/cancel', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const cancellationData = req.body;
+
+    const job = await Job.findByIdAndUpdate(jobId, {
+      status: 'cancelled',
+      cancellationData: {
+        ...cancellationData,
+        cancelledAt: new Date()
+      }
+    }, { new: true })
+      .populate('customerId')
+      .populate('technicianId');
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Notify both parties
+    await pusher.trigger(`user-${job.customerId._id || job.customerId}`, 'job_cancelled', { job });
+    await pusher.trigger(`user-${job.technicianId._id || job.technicianId}`, 'job_cancelled', { job });
+
+    res.json({ success: true, job });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // API: Booking History
 app.get('/api/bookings/user/:userId', async (req, res) => {
   try {

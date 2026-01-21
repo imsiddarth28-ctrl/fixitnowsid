@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import API_URL from '../config';
-import { Menu, X, Check, Ban, Activity, DollarSign, Users, Bell } from 'lucide-react';
+import { Menu, X, Check, Ban, Activity, DollarSign, Users, Bell, Trash2, Shield, Search, TrendingUp, BarChart3, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const [technicians, setTechnicians] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [view, setView] = useState('techs'); // 'techs', 'bookings', 'analytics', 'support'
     const [loading, setLoading] = useState(true);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) setIsSidebarOpen(true);
+            else setIsSidebarOpen(false);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -62,403 +67,349 @@ const AdminDashboard = () => {
     };
 
     const stats = {
-        totalEarnings: bookings.filter(b => b.status === 'completed').reduce((acc, curr) => acc + (curr.price || 0), 0),
-        activeTechs: technicians.filter(t => t.isAvailable && !t.isBlocked).length,
-        pendingTechs: technicians.filter(t => !t.isVerified).length,
-        pendingBookings: bookings.filter(b => b.status === 'pending').length,
-        avgRating: technicians.length > 0
-            ? (technicians.reduce((acc, curr) => acc + curr.rating, 0) / technicians.length).toFixed(1)
+        totalEarnings: bookings?.filter(b => b.status === 'completed').reduce((acc, curr) => acc + (curr.price || 0), 0) || 0,
+        activeTechs: technicians?.filter(t => t.isAvailable && !t.isBlocked).length || 0,
+        pendingTechs: technicians?.filter(t => !t.isVerified).length || 0,
+        pendingBookings: bookings?.filter(b => b.status === 'pending').length || 0,
+        avgRating: technicians?.length > 0
+            ? (technicians.reduce((acc, curr) => acc + (curr.rating || 0), 0) / technicians.length).toFixed(1)
             : 5.0
     };
 
     const menuItems = [
         { id: 'techs', label: 'Technician Hub', icon: Users },
         { id: 'bookings', label: 'Project Ledger', icon: Activity },
-        { id: 'analytics', label: 'Growth Insights', icon: DollarSign },
+        { id: 'analytics', label: 'Growth Insights', icon: BarChart3 },
         { id: 'support', label: 'System Alerts', icon: Bell }
     ];
 
-    // Dummy Alerts for Demo
     const systemAlerts = [
         { id: 1, type: 'info', msg: 'System backup completed successfully.', time: '10m ago' },
-        { id: 2, type: 'warning', msg: 'High demand detected in New York area.', time: '1h ago' },
-        { id: 3, type: 'success', msg: 'New technician registration batch processed.', time: '2h ago' },
-        { id: 4, type: 'error', msg: 'Payment gateway latency spike observed.', time: '5h ago' },
+        { id: 2, type: 'warning', msg: 'High demand detected in downtown area.', time: '1h ago' },
+        { id: 3, type: 'success', msg: 'New pro registration batch processed.', time: '2h ago' },
+        { id: 4, type: 'error', msg: 'Sync latency spike observed.', time: '5h ago' },
     ];
 
-    return (
-        <div style={{
-            minHeight: '100vh',
-            background: 'var(--bg)',
-            display: 'flex',
-            width: '100%',
-            position: 'relative',
-            textAlign: 'left',
-            fontFamily: '"Inter", sans-serif',
-            overflowX: 'hidden'
-        }}>
-            {/* Mobile Overlay */}
-            {isMobile && sidebarOpen && (
-                <div
-                    onClick={() => setSidebarOpen(false)}
-                    style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40,
-                        backdropFilter: 'blur(4px)'
-                    }}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside style={{
-                width: '280px',
-                borderRight: '1px solid var(--border)',
-                padding: '2rem 1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100vh',
-                position: 'fixed',
-                left: 0,
-                top: 0,
-                zIndex: 50,
-                background: 'var(--bg)',
-                transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-                transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                    <div style={{
-                        fontFamily: 'var(--font-heading)',
-                        fontWeight: 900,
-                        fontSize: '1.6rem',
-                        letterSpacing: '-0.03em',
-                        color: 'var(--text)',
-                        background: 'linear-gradient(to right, var(--text), var(--text-muted))',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
+    const NavItem = ({ id, icon: Icon, label, badge }) => {
+        const isActive = view === id;
+        return (
+            <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                    setView(id);
+                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                className={isActive ? 'glass' : ''}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 18px',
+                    width: '100%',
+                    background: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                    color: isActive ? 'var(--text)' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? '600' : '500',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                }}
+            >
+                <Icon size={20} style={{ opacity: isActive ? 1 : 0.7 }} />
+                <span style={{ flex: 1 }}>{label}</span>
+                {badge > 0 && (
+                    <span style={{
+                        background: 'var(--error)', color: 'white',
+                        fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', fontWeight: '800'
                     }}>
-                        ADMIN.
-                    </div>
-                    {isMobile && (
-                        <button
-                            onClick={() => setSidebarOpen(false)}
-                            style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid var(--border)',
-                                borderRadius: '0.5rem',
-                                padding: '0.4rem',
-                                cursor: 'pointer',
-                                color: 'var(--text)',
-                                display: 'flex',
-                                alignItems: 'center'
-                            }}
-                        >
-                            <X size={20} />
-                        </button>
-                    )}
-                </div>
+                        {badge}
+                    </span>
+                )}
+            </motion.button>
+        );
+    };
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                    {menuItems.map(item => {
-                        const Icon = item.icon;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => { setView(item.id); if (isMobile) setSidebarOpen(false); }}
-                                style={{
-                                    textAlign: 'left',
-                                    padding: '0.75rem 1rem',
-                                    borderRadius: '0.5rem',
-                                    border: 'none',
-                                    background: view === item.id ? 'var(--text)' : 'transparent',
-                                    color: view === item.id ? 'var(--bg)' : 'var(--text-muted)',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.8rem'
-                                }}
-                            >
-                                <Icon size={18} />
-                                {item.label}
-                                {item.id === 'techs' && stats.pendingTechs > 0 && (
-                                    <span style={{ fontSize: '0.7rem', background: '#ef4444', color: 'white', padding: '0.1rem 0.4rem', borderRadius: '1rem', marginLeft: 'auto' }}>
-                                        {stats.pendingTechs}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
-                    <button
-                        onClick={logout}
+    return (
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
+            {/* Sidebar */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.aside
+                        initial={{ x: -300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -300, opacity: 0 }}
                         style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid var(--border)',
-                            background: 'transparent',
-                            color: 'var(--text)',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
+                            position: 'fixed',
+                            left: 0, top: 0, bottom: 0,
+                            width: '280px',
+                            background: 'var(--bg-secondary)',
+                            borderRight: '1px solid var(--border)',
+                            padding: '24px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            zIndex: 1000
                         }}
                     >
-                        Terminate Session
-                    </button>
-                </div>
-            </aside>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: '32px', height: '32px', background: 'var(--text)',
+                                    borderRadius: '10px', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', color: 'var(--bg)'
+                                }}>
+                                    <Shield size={18} />
+                                </div>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
+                                <span style={{ fontSize: '0.65rem', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', fontWeight: '800' }}>ADMIN</span>
+                            </div>
+                            {window.innerWidth < 1024 && (
+                                <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                    <X size={20} />
+                                </button>
+                            )}
+                        </div>
 
-            {/* Main Content */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                            {menuItems.map(item => (
+                                <NavItem key={item.id} id={item.id} icon={item.icon} label={item.label} badge={item.id === 'techs' ? stats.pendingTechs : 0} />
+                            ))}
+                        </div>
+
+                        <div className="glass" style={{ padding: '20px', borderRadius: 'var(--radius-lg)', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px' }}>System Status</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--success)', fontWeight: '600' }}>
+                                <span style={{ width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%' }}></span>
+                                All Systems Operational
+                            </div>
+                        </div>
+
+                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+                            <button onClick={logout} style={{
+                                width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)',
+                                background: 'transparent', color: 'var(--error)', fontWeight: '700', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifySelf: 'center', gap: '10px'
+                            }}>
+                                <LogOut size={18} /> Terminate Root Session
+                            </button>
+                        </div>
+                    </motion.aside>
+                )}
+            </AnimatePresence>
+
+            {/* Main Wrapper */}
             <main style={{
                 flex: 1,
-                padding: isMobile ? '1.5rem' : '3rem 4rem',
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2rem',
-                overflowY: 'auto',
-                marginLeft: isMobile ? 0 : '280px',
-                width: isMobile ? '100%' : 'calc(100% - 280px)'
+                marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '280px' : '0',
+                padding: '0 0 100px 0',
+                transition: 'margin 0.3sease'
             }}>
-                {/* Mobile Header Toggle */}
-                {isMobile && (
-                    <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text)' }}>
-                            <Menu size={24} />
-                        </button>
-                        <span style={{ fontWeight: 800, fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
-                    </div>
-                )}
-
                 {/* Header */}
                 <header style={{
+                    padding: '24px 40px',
                     display: 'flex',
-                    flexDirection: isMobile ? 'column' : 'row',
                     justifyContent: 'space-between',
-                    alignItems: isMobile ? 'flex-start' : 'center',
-                    gap: isMobile ? '1rem' : 0,
-                    marginBottom: '4rem',
-                    paddingBottom: '2rem',
+                    alignItems: 'center',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100,
+                    background: 'var(--glass-bg)',
+                    backdropFilter: 'blur(12px)',
                     borderBottom: '1px solid var(--border)'
                 }}>
-                    <div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
-                            CORE COMMAND / {menuItems.find(m => m.id === view)?.label}
-                        </div>
-                        <h1 style={{
-                            fontSize: isMobile ? '1.8rem' : '2.5rem',
-                            fontWeight: 900,
-                            fontFamily: 'var(--font-heading)',
-                            margin: 0,
-                            letterSpacing: '-0.02em'
-                        }}>
-                            Platform Command
-                        </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {!isSidebarOpen && (
+                            <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
+                                <Menu size={24} />
+                            </button>
+                        )}
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+                            Command Center
+                        </h2>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-                        <div style={{ display: 'flex', gap: '2rem' }}>
-                            <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 800 }}>TOTAL VOLUME</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>${stats.totalEarnings.toFixed(2)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
+                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                        <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '12px', borderLeft: '1px solid var(--border)' }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>Root Admin</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Superuser.01</div>
                             </div>
-                            <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 800 }}>AVG RATING</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{stats.avgRating}</div>
-                            </div>
+                            <div style={{ width: '40px', height: '40px', background: 'var(--text)', color: 'var(--bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800' }}>A</div>
                         </div>
-
-                        {!isMobile && (
-                            <div style={{ height: '40px', width: '1px', background: 'var(--border)' }}></div>
-                        )}
-
-                        {!isMobile && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--text)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>A</div>
-                                <div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Root Admin</div>
-                                    <button onClick={logout} style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', fontWeight: 600, cursor: 'pointer' }}>Logout</button>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </header>
 
-                {/* Content */}
-                <div style={{ width: '100%' }} className="animate-fade-in">
-                    {view === 'techs' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {technicians.length === 0 && <div style={{ color: 'var(--text-muted)', padding: '2rem' }}>No technicians found.</div>}
-                            {technicians.sort((a, b) => (a.isVerified === b.isVerified) ? 0 : a.isVerified ? 1 : -1).map(tech => (
-                                <div key={tech._id} style={{
-                                    padding: '1.5rem',
-                                    background: 'var(--card)',
-                                    border: `1px solid ${!tech.isVerified ? '#f59e0b' : 'var(--border)'}`,
-                                    borderRadius: '0.75rem',
-                                    display: 'flex',
-                                    flexDirection: isMobile ? 'column' : 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: isMobile ? 'flex-start' : 'center',
-                                    gap: '1.5rem',
-                                    opacity: tech.isBlocked ? 0.6 : 1,
-                                    position: 'relative'
-                                }}>
-                                    {!tech.isVerified && (
-                                        <div style={{
-                                            position: 'absolute', top: '-10px', left: '20px', background: '#f59e0b', color: 'black',
-                                            fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: '1rem',
-                                            letterSpacing: '0.05em'
-                                        }}>
-                                            PENDING APPROVAL
-                                        </div>
-                                    )}
-                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                                            {tech.name[0]}
-                                        </div>
-                                        <div>
-                                            <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem' }}>{tech.name} {tech.isBlocked && <span style={{ color: 'var(--error)', fontSize: '0.7rem' }}>(BLOCKED)</span>}</h4>
-                                            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                                                <span>{tech.serviceType}</span>
-                                                <span>•</span>
-                                                <span>{tech.email}</span>
-                                                <span>•</span>
-                                                <span>{tech.rating}⭐</span>
+                <div className="container" style={{ padding: '40px' }}>
+                    <motion.div
+                        key={view}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {/* Summary Section */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                            <div className="bento-card">
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Volume</div>
+                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>${stats.totalEarnings.toFixed(2)}</div>
+                            </div>
+                            <div className="bento-card">
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Experts</div>
+                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.activeTechs}</div>
+                            </div>
+                            <div className="bento-card">
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Satisfaction</div>
+                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.avgRating}</div>
+                            </div>
+                            <div className="bento-card">
+                                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Queue</div>
+                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.pendingBookings}</div>
+                            </div>
+                        </div>
+
+                        {view === 'techs' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Expert Verification Hub</h3>
+                                    <div className="glass" style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Search size={16} color="var(--text-secondary)" />
+                                        <input type="text" placeholder="Search professionals..." style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: '0.9rem' }} />
+                                    </div>
+                                </div>
+                                {technicians.map(tech => (
+                                    <motion.div key={tech._id} whileHover={{ y: -2 }} className="bento-card" style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        border: !tech.isVerified ? '1px solid var(--text)' : '1px solid var(--border)',
+                                        opacity: tech.isBlocked ? 0.5 : 1
+                                    }}>
+                                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.2rem' }}>
+                                                {tech.name[0]}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{tech.name} {tech.isBlocked && <span style={{ color: 'var(--error)', fontSize: '0.7rem' }}>[BLOCKED]</span>}</div>
+                                                <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                                    <span>{tech.serviceType}</span>
+                                                    <span>•</span>
+                                                    <span>{tech.email}</span>
+                                                    <span>•</span>
+                                                    <span style={{ color: 'var(--text)', fontWeight: '700' }}>{tech.rating}⭐</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '1rem', width: isMobile ? '100%' : 'auto' }}>
-                                        {!tech.isVerified && (
-                                            <button
-                                                className="btn-approve"
-                                                onClick={() => approveTech(tech._id)}
-                                                style={{
-                                                    flex: 1, padding: '0.6rem 1.2rem', fontSize: '0.85rem',
-                                                    background: '#22c55e', color: 'white', border: 'none',
-                                                    borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                                                }}
-                                            >
-                                                <Check size={16} /> APPROVE
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            {!tech.isVerified && (
+                                                <button onClick={() => approveTech(tech._id)} className="btn btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.8rem' }}>
+                                                    APPROVE PRO
+                                                </button>
+                                            )}
+                                            <button onClick={() => toggleBlockTech(tech._id, tech.isBlocked)} className="btn btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.8rem', color: tech.isBlocked ? 'var(--text)' : 'var(--error)' }}>
+                                                {tech.isBlocked ? 'UNBLOCK' : 'RESTRICT'}
                                             </button>
-                                        )}
-                                        <button
-                                            onClick={() => toggleBlockTech(tech._id, tech.isBlocked)}
-                                            style={{
-                                                flex: 1, padding: '0.6rem 1.2rem', fontSize: '0.85rem',
-                                                background: 'transparent', color: tech.isBlocked ? 'var(--text)' : '#ef4444',
-                                                border: `1px solid ${tech.isBlocked ? 'var(--border)' : '#ef4444'}`,
-                                                borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
-                                            }}
-                                        >
-                                            <Ban size={16} /> {tech.isBlocked ? 'UNBLOCK' : 'REJECT'}
-                                        </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+
+                        {view === 'bookings' && (
+                            <div className="bento-card" style={{ padding: 0, overflow: 'hidden' }}>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                        <thead>
+                                            <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
+                                                <th style={{ padding: '1.5rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>ID</th>
+                                                <th style={{ padding: '1.5rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Service</th>
+                                                <th style={{ padding: '1.5rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Parties</th>
+                                                <th style={{ padding: '1.5rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</th>
+                                                <th style={{ padding: '1.5rem', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {bookings.map(job => (
+                                                <tr key={job._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.8rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{job._id.slice(-6).toUpperCase()}</td>
+                                                    <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.95rem', fontWeight: '700' }}>{job.serviceType}</td>
+                                                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>C: {job.customerId?.name || '---'}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>T: {job.technicianId?.name || '---'}</div>
+                                                    </td>
+                                                    <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                        <span className="badge" style={{
+                                                            background: job.status === 'completed' ? 'var(--text)' : 'var(--bg-tertiary)',
+                                                            color: job.status === 'completed' ? 'var(--bg)' : 'var(--text)',
+                                                            fontSize: '0.65rem'
+                                                        }}>
+                                                            {job.status}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '1.25rem 1.5rem', fontWeight: '800', fontSize: '1.1rem' }}>
+                                                        ${(job.price || 0).toFixed(2)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'analytics' && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                                <div className="bento-card" style={{ gridColumn: 'span 2' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                                        <h4 style={{ fontWeight: '800', fontSize: '1.2rem' }}>Revenue Stream</h4>
+                                        <TrendingUp size={20} color="var(--success)" />
+                                    </div>
+                                    <div style={{ height: '240px', background: 'var(--bg-tertiary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                        Interactive Chart Component
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {view === 'bookings' && (
-                        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '0.75rem', overflow: 'hidden' }}>
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
-                                    <thead>
-                                        <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
-                                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>PROJECT ID</th>
-                                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>SERVICE</th>
-                                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>PARTIES</th>
-                                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>STATUS</th>
-                                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>PRICE</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {bookings.map(job => (
-                                            <tr key={job._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontFamily: 'monospace' }}>#{job._id.slice(-6).toUpperCase()}</td>
-                                                <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', fontWeight: 600 }}>{job.serviceType}</td>
-                                                <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem' }}>
-                                                    <div style={{ fontWeight: 600 }}>{job.customerId?.name || 'User'}</div>
-                                                    <div style={{ color: 'var(--text-muted)' }}>{job.technicianId?.name || 'Unassigned'}</div>
-                                                </td>
-                                                <td style={{ padding: '1rem 1.5rem' }}>
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 800,
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '0.25rem',
-                                                        background: job.status === 'completed' ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.1)',
-                                                        color: job.status === 'completed' ? '#22c55e' : '#3b82f6',
-                                                        textTransform: 'uppercase'
-                                                    }}>
-                                                        {job.status}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '1rem 1.5rem', fontWeight: 700 }}>
-                                                    ${job.price || 0}
-                                                </td>
-                                            </tr>
+                                <div className="bento-card">
+                                    <div style={{ fontWeight: '800', fontSize: '1.2rem', marginBottom: '20px' }}>Service Distribution</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {['Plumbing', 'Electrical', 'Cleaning', 'AC Repair'].map((s, i) => (
+                                            <div key={i}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+                                                    <span>{s}</span>
+                                                    <span style={{ fontWeight: '700' }}>{70 - i * 15}%</span>
+                                                </div>
+                                                <div style={{ height: '6px', width: '100%', background: 'var(--bg-tertiary)', borderRadius: '10px' }}>
+                                                    <div style={{ height: '100%', width: `${70 - i * 15}%`, background: 'var(--text)', borderRadius: '10px' }}></div>
+                                                </div>
+                                            </div>
                                         ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {view === 'analytics' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1.5rem' }}>
-                            <div style={{ background: 'var(--card)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
-                                <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>REVENUE GROWTH</h3>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800 }}>+128%</div>
-                                <div style={{ marginTop: '0.5rem', color: '#22c55e', fontSize: '0.9rem' }}>↗ Record High</div>
-                            </div>
-                            <div style={{ background: 'var(--card)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
-                                <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>ACTIVE EXPERTS</h3>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800 }}>{stats.activeTechs}</div>
-                                <div style={{ marginTop: '0.5rem', color: '#3b82f6', fontSize: '0.9rem' }}>Deployable Now</div>
-                            </div>
-                            <div style={{ background: 'var(--card)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
-                                <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>CLIENT SATISFACTION</h3>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800 }}>{stats.avgRating}</div>
-                                <div style={{ marginTop: '0.5rem', color: '#22c55e', fontSize: '0.9rem' }}>★★★★★ Five Star</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {view === 'support' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {systemAlerts.map(alert => (
-                                <div key={alert.id} style={{
-                                    padding: '1.5rem',
-                                    background: 'var(--card)',
-                                    borderLeft: `4px solid ${alert.type === 'error' ? '#ef4444' : alert.type === 'warning' ? '#f59e0b' : '#22c55e'}`,
-                                    borderRadius: '0.5rem',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
-                                    <div style={{ fontWeight: 600 }}>{alert.msg}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{alert.time}</div>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        )}
+
+                        {view === 'support' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {systemAlerts.map(alert => (
+                                    <div key={alert.id} className="glass" style={{
+                                        padding: '20px 24px',
+                                        borderLeft: `6px solid ${alert.type === 'error' ? 'var(--error)' : alert.type === 'warning' ? 'var(--warning)' : 'var(--text)'}`,
+                                        borderRadius: '16px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{alert.msg}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>System Node: {alert.time}</div>
+                                        </div>
+                                        <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.75rem' }}>Acknowledge</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
                 </div>
             </main>
-
-            <style>{`
-                .animate-fade-in {
-                    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
         </div>
     );
 };
