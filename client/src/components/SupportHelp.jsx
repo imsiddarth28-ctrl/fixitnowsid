@@ -16,75 +16,57 @@ const SupportHelp = () => {
     const [sending, setSending] = useState(false);
 
     const sections = [
-        { id: 'faq', label: 'FAQs', icon: HelpCircle },
-        { id: 'guides', label: 'Guides', icon: Book },
-        { id: 'contact', label: 'Contact Us', icon: MessageCircle }
+        { id: 'faq', label: 'NEURAL_ANSWERS', icon: HelpCircle },
+        { id: 'guides', label: 'OPERATIONAL_GUIDES', icon: Book },
+        { id: 'contact', label: 'DIRECT_UPLINK', icon: MessageCircle }
     ];
 
     const faqs = user?.role === 'customer' ? [
         {
-            category: 'Booking',
+            category: 'BOOKING_PROTOCOLS',
             questions: [
-                { q: 'How do I book a service?', a: 'Browse available technicians, select one, choose your service type, and confirm booking. You\'ll receive instant confirmation.' },
-                { q: 'Can I cancel a booking?', a: 'Yes, you can cancel before the technician accepts. Once accepted, contact support for cancellation.' },
-                { q: 'How do I track my technician?', a: 'Once your booking is accepted, you\'ll see real-time tracking on the map with live location updates.' }
+                { q: 'How do I book a service?', a: 'Browse authorized experts, select your technician, choose the service module, and confirm. System will verify and establish connection.' },
+                { q: 'Can I terminate a booking?', a: 'Yes, you can initialize termination before technician deployment. Post-acceptance termination requires neural support authorization.' },
+                { q: 'How do I track my technician?', a: 'Once the mission is accepted, real-time telemetry will be available via the map interface with live coordinate updates.' }
             ]
         },
         {
-            category: 'Payments',
+            category: 'CREDENTIALS_&_PAYMENTS',
             questions: [
-                { q: 'What payment methods are accepted?', a: 'We accept credit/debit cards, UPI, net banking, and digital wallets.' },
-                { q: 'When am I charged?', a: 'Payment is processed after service completion. You\'ll receive a detailed receipt.' },
-                { q: 'How do refunds work?', a: 'Refunds are processed within 5-7 business days to your original payment method.' }
-            ]
-        },
-        {
-            category: 'Safety',
-            questions: [
-                { q: 'Are technicians verified?', a: 'Yes, all technicians undergo background checks and skill verification before joining.' },
-                { q: 'Can I rate my technician?', a: 'Absolutely! After service completion, you can rate and review your experience.' },
-                { q: 'What if I\'m not satisfied?', a: 'Contact support immediately. We offer service guarantees and will resolve any issues.' }
+                { q: 'What payment methods are accepted?', a: 'We accept encrypted transactions via credit/debit cards, digital wallets, and universal credit protocols.' },
+                { q: 'When is credit deducted?', a: 'Credits are finalized post-operation completion. A secure ledger receipt will be generated for your records.' },
+                { q: 'How do credit reversals work?', a: 'Reversals are processed within 5-7 solar days to the original transaction node.' }
             ]
         }
     ] : [
         {
-            category: 'Getting Started',
+            category: 'MISSION_ACQUISITION',
             questions: [
-                { q: 'How do I receive job requests?', a: 'Set your status to "Available" in your dashboard. You\'ll receive instant notifications for nearby jobs.' },
-                { q: 'Can I decline a job?', a: 'Yes, you can accept or decline any job request. Your acceptance rate affects your ranking.' },
-                { q: 'How do I update my location?', a: 'Your location updates automatically when you\'re active. Ensure location permissions are enabled.' }
+                { q: 'How do I receive job requests?', a: 'Set your status to "ACTIVE" in the control center. You will receive priority dispatch notifications for local missions.' },
+                { q: 'Can I decline a mission?', a: 'Yes, you can accept or bypass any request. Your mission success rate affects your authorization priority.' },
+                { q: 'How do I update telemetry?', a: 'Telemetry is automated while your status is ACTIVE. Ensure all terminal permissions are granted.' }
             ]
         },
         {
-            category: 'Earnings',
+            category: 'CREDIT_ALLOCATION',
             questions: [
-                { q: 'When do I get paid?', a: 'Payments are released after job completion and customer confirmation, typically within 24 hours.' },
-                { q: 'What are the platform fees?', a: 'FixItNow charges a 20% service fee on each completed job.' },
-                { q: 'How can I increase my earnings?', a: 'Maintain high ratings, complete more jobs, and be available during peak hours.' }
-            ]
-        },
-        {
-            category: 'Account',
-            questions: [
-                { q: 'How do I improve my rating?', a: 'Provide excellent service, communicate clearly, arrive on time, and maintain professionalism.' },
-                { q: 'Can I work in multiple areas?', a: 'Yes, you can update your service area in profile settings to cover multiple locations.' },
-                { q: 'What if I need to take a break?', a: 'Simply set your status to "Unavailable". You won\'t receive job requests until you\'re back.' }
+                { q: 'When are credits disbursed?', a: 'Credits are allocated post-mission verification, typically within one solar cycle.' },
+                { q: 'What are the platform protocols?', a: 'FixItNow standard protocol reserves a 20% service allocation for ongoing system maintenance.' },
+                { q: 'How can I maximize allocation?', a: 'Maintain high trust scores, complete complex missions, and maintain high availability during peak cycles.' }
             ]
         }
     ];
 
     const guides = user?.role === 'customer' ? [
-        { title: 'How to Book Your First Service', duration: '3 min read', link: '#' },
-        { title: 'Understanding Service Pricing', duration: '5 min read', link: '#' },
-        { title: 'Using Real-Time Tracking', duration: '4 min read', link: '#' },
-        { title: 'Payment Methods & Receipts', duration: '3 min read', link: '#' },
-        { title: 'Rating & Reviewing Technicians', duration: '2 min read', link: '#' }
+        { title: 'INITIALIZING_YOUR_FIRST_MISSION', duration: '3 MIN READ', link: '#' },
+        { title: 'UNDERSTANDING_CREDIT_PROTOCOLS', duration: '5 MIN READ', link: '#' },
+        { title: 'TELEMETRY_INTERFACE_MASTERY', duration: '4 MIN READ', link: '#' },
+        { title: 'LEDGER_&_RECEIPT_MANAGEMENT', duration: '3 MIN READ', link: '#' }
     ] : [
-        { title: 'Getting Started as a Technician', duration: '5 min read', link: '#' },
-        { title: 'Maximizing Your Earnings', duration: '7 min read', link: '#' },
-        { title: 'Best Practices for Service Delivery', duration: '6 min read', link: '#' },
-        { title: 'Understanding the Rating System', duration: '4 min read', link: '#' },
-        { title: 'Managing Your Availability', duration: '3 min read', link: '#' }
+        { title: 'TECHNICIAN_UNIT_ONBOARDING', duration: '5 MIN READ', link: '#' },
+        { title: 'CREDIT_OPTIMIZATION_STRATEGIES', duration: '7 MIN READ', link: '#' },
+        { title: 'MISSION_EFFICIENCY_HANDBOOK', duration: '6 MIN READ', link: '#' },
+        { title: 'TRUST_SCORE_MECHANICS', duration: '4 MIN READ', link: '#' }
     ];
 
     const handleContactSubmit = async (e) => {
@@ -100,12 +82,12 @@ const SupportHelp = () => {
                 })
             });
             if (res.ok) {
-                alert('Message sent! Our team will respond within 24 hours.');
+                alert('COMMUNICATION_ESTABLISHED! Our team will respond within one solar cycle.');
                 setContactForm({ subject: '', message: '', priority: 'normal' });
             }
         } catch (err) {
-            console.error('Send failed:', err);
-            alert('Failed to send message. Please try again.');
+            console.error('Uplink failed:', err);
+            alert('CRITICAL_ERROR: Communication uplink failed. Please retry.');
         } finally {
             setSending(false);
         }
@@ -120,277 +102,285 @@ const SupportHelp = () => {
     })).filter(category => category.questions.length > 0);
 
     return (
-        <div>
-            <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.5rem' }}>Support & Help</h2>
-                <p style={{ color: 'var(--text-muted)' }}>Get help with your FixItNow experience</p>
+        <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'var(--accent)' }}>
+                    <Shield size={20} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>NEURAL_HUB_ACTIVE</span>
+                </div>
+                <h1 style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '-0.04em', marginBottom: '12px' }}>SUPPORT_AND_MAINTENANCE</h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>Access system knowledge or establish a direct uplink with command.</p>
             </div>
 
-            {/* Quick Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{
-                    padding: '1.5rem',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    borderRadius: '1rem',
-                    color: 'white',
-                    cursor: 'pointer'
-                }}
-                    onClick={() => setActiveSection('contact')}>
-                    <MessageCircle size={32} style={{ marginBottom: '1rem' }} />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.3rem' }}>Live Chat</h3>
-                    <p style={{ fontSize: '0.85rem', opacity: 0.9 }}>Get instant help from our team</p>
-                </div>
-                <div style={{
-                    padding: '1.5rem',
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '1rem',
-                    cursor: 'pointer'
-                }}>
-                    <Phone size={32} style={{ marginBottom: '1rem', color: '#10b981' }} />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.3rem' }}>Call Us</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>+1 (800) 123-4567</p>
-                </div>
-                <div style={{
-                    padding: '1.5rem',
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '1rem',
-                    cursor: 'pointer'
-                }}>
-                    <Mail size={32} style={{ marginBottom: '1rem', color: '#f59e0b' }} />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.3rem' }}>Email</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>support@fixitnow.com</p>
-                </div>
+            {/* Quick Actions Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '4rem' }}>
+                <motion.div
+                    whileHover={{ y: -8 }}
+                    onClick={() => setActiveSection('contact')}
+                    className="bento-card"
+                    style={{
+                        padding: '32px',
+                        background: 'var(--text)',
+                        color: 'var(--bg)',
+                        cursor: 'pointer',
+                        borderRadius: '32px',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    <MessageCircle size={40} style={{ marginBottom: '24px' }} />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>LIVE_UPLINK</h3>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '600', opacity: 0.8 }}>Direct communication with tactical support.</p>
+                </motion.div>
+
+                <motion.div
+                    whileHover={{ y: -8 }}
+                    className="bento-card glass"
+                    style={{
+                        padding: '32px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '32px'
+                    }}
+                >
+                    <Phone size={40} style={{ marginBottom: '24px', color: 'var(--text)' }} />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>VOICE_CHANNEL</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '600' }}>+1 (800) FIX-IT-NOW</p>
+                </motion.div>
+
+                <motion.div
+                    whileHover={{ y: -8 }}
+                    className="bento-card glass"
+                    style={{
+                        padding: '32px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '32px'
+                    }}
+                >
+                    <Mail size={40} style={{ marginBottom: '24px', color: 'var(--text)' }} />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px' }}>ENCRYPTED_MAIL</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '600' }}>support@fixitnow.com</p>
+                </motion.div>
             </div>
 
             {/* Section Tabs */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '40px',
+                padding: '8px',
+                background: 'var(--bg-secondary)',
+                borderRadius: '20px',
+                width: 'fit-content',
+                border: '1px solid var(--border)'
+            }}>
                 {sections.map(section => {
                     const Icon = section.icon;
+                    const isActive = activeSection === section.id;
                     return (
                         <button
                             key={section.id}
                             onClick={() => setActiveSection(section.id)}
+                            className={isActive ? 'glass' : ''}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '1rem 1.5rem',
+                                gap: '10px',
+                                padding: '12px 24px',
                                 border: 'none',
-                                background: 'transparent',
-                                color: activeSection === section.id ? 'var(--text)' : 'var(--text-muted)',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
+                                background: isActive ? 'var(--text)' : 'transparent',
+                                color: isActive ? 'var(--bg)' : 'var(--text-secondary)',
+                                borderRadius: '14px',
+                                fontSize: '0.8rem',
+                                fontWeight: '900',
+                                letterSpacing: '0.05em',
                                 cursor: 'pointer',
-                                borderBottom: activeSection === section.id ? '2px solid var(--text)' : '2px solid transparent',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}
                         >
-                            <Icon size={18} />
+                            <Icon size={16} />
                             {section.label}
                         </button>
                     );
                 })}
             </div>
 
-            {/* Content */}
-            <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-            >
-                {/* FAQ Section */}
-                {activeSection === 'faq' && (
-                    <div>
-                        {/* Search */}
-                        <div style={{ marginBottom: '2rem' }}>
-                            <div style={{ position: 'relative' }}>
-                                <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            {/* Content Area */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeSection}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    {/* FAQ Area */}
+                    {activeSection === 'faq' && (
+                        <div>
+                            <div style={{ marginBottom: '48px', position: 'relative' }}>
+                                <Search size={24} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
                                     type="text"
-                                    placeholder="Search for answers..."
+                                    placeholder="SEARCH_SYSTEM_KNOWLEDGE..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="input glass"
                                     style={{
                                         width: '100%',
-                                        padding: '0.75rem 1rem 0.75rem 3rem',
-                                        borderRadius: '0.75rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        color: 'var(--text)',
-                                        fontSize: '0.95rem'
+                                        padding: '24px 24px 24px 64px',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '600',
+                                        background: 'var(--bg-secondary)',
+                                        borderRadius: '24px'
                                     }}
                                 />
                             </div>
-                        </div>
 
-                        {/* FAQ Categories */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                            {filteredFaqs.map((category, idx) => (
-                                <div key={idx}>
-                                    <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '1rem' }}>{category.category}</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {category.questions.map((faq, qIdx) => (
-                                            <details key={qIdx} style={{
-                                                padding: '1.5rem',
-                                                background: 'var(--card)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: '0.75rem',
-                                                cursor: 'pointer'
-                                            }}>
-                                                <summary style={{ fontWeight: 700, fontSize: '0.95rem', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    {faq.q}
-                                                    <ChevronRight size={20} style={{ transition: 'transform 0.2s' }} />
-                                                </summary>
-                                                <p style={{ marginTop: '1rem', color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.9rem' }}>
-                                                    {faq.a}
-                                                </p>
-                                            </details>
-                                        ))}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px' }}>
+                                {filteredFaqs.map((category, idx) => (
+                                    <div key={idx} className="bento-card glass" style={{ padding: '32px', borderRadius: '32px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                                        <h3 style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '24px', letterSpacing: '0.1em' }}>{category.category}</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            {category.questions.map((faq, qIdx) => (
+                                                <details key={qIdx} style={{
+                                                    background: 'var(--bg-tertiary)',
+                                                    borderRadius: '20px',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <summary style={{
+                                                        padding: '20px 24px',
+                                                        fontWeight: '800',
+                                                        fontSize: '0.95rem',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        listStyle: 'none'
+                                                    }}>
+                                                        <span>{faq.q.toUpperCase()}</span>
+                                                        <ChevronRight size={18} />
+                                                    </summary>
+                                                    <div style={{
+                                                        padding: '0 24px 24px',
+                                                        color: 'var(--text-secondary)',
+                                                        lineHeight: '1.6',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {faq.a}
+                                                    </div>
+                                                </details>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Guides Section */}
-                {activeSection === 'guides' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                        {guides.map((guide, idx) => (
-                            <div key={idx} style={{
-                                padding: '1.5rem',
-                                background: 'var(--card)',
-                                border: '1px solid var(--border)',
-                                borderRadius: '0.75rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-4px)';
-                                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                                    <Book size={24} color="#3b82f6" />
-                                    <ExternalLink size={18} color="var(--text-muted)" />
-                                </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.5rem' }}>{guide.title}</h3>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{guide.duration}</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Contact Section */}
-                {activeSection === 'contact' && (
-                    <div style={{ maxWidth: '600px' }}>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '1rem' }}>Send us a message</h3>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                            Our support team typically responds within 24 hours
-                        </p>
-
-                        <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                    Subject
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={contactForm.subject}
-                                    onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
-                                    placeholder="What do you need help with?"
+                    {/* Guides Area */}
+                    {activeSection === 'guides' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                            {guides.map((guide, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    whileHover={{ y: -8, scale: 1.02 }}
+                                    className="bento-card glass"
                                     style={{
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '0.5rem',
+                                        padding: '32px',
+                                        background: 'var(--bg-secondary)',
                                         border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        color: 'var(--text)',
-                                        fontSize: '0.95rem'
-                                    }}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                    Priority
-                                </label>
-                                <select
-                                    value={contactForm.priority}
-                                    onChange={(e) => setContactForm({ ...contactForm, priority: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        color: 'var(--text)',
-                                        fontSize: '0.95rem'
+                                        borderRadius: '32px',
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    <option value="low">Low - General inquiry</option>
-                                    <option value="normal">Normal - Need assistance</option>
-                                    <option value="high">High - Urgent issue</option>
-                                </select>
-                            </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                        <div style={{ width: '48px', height: '48px', background: 'var(--text)', color: 'var(--bg)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Book size={24} />
+                                        </div>
+                                        <ExternalLink size={18} color="var(--text-secondary)" />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '12px' }}>{guide.title}</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--accent)' }} />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{guide.duration}</span>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
 
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                    Message
-                                </label>
-                                <textarea
-                                    required
-                                    value={contactForm.message}
-                                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                                    rows={6}
-                                    placeholder="Describe your issue or question in detail..."
+                    {/* Contact Form Area */}
+                    {activeSection === 'contact' && (
+                        <div className="bento-card glass" style={{ maxWidth: '800px', margin: '0 auto', padding: '48px', borderRadius: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.02em' }}>INITIATE_UPLINK</h3>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontWeight: '500' }}>
+                                Deploy a secure communication channel to FixItNow command center.
+                            </p>
+
+                            <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '12px', letterSpacing: '0.1em' }}>MODULE_SUBJECT</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={contactForm.subject}
+                                            onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
+                                            placeholder="NATURE_OF_INQUIRY..."
+                                            className="input"
+                                            style={{ background: 'var(--bg)', borderRadius: '16px', padding: '16px 20px' }}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '12px', letterSpacing: '0.1em' }}>PRIORITY_LEVEL</label>
+                                        <select
+                                            value={contactForm.priority}
+                                            onChange={(e) => setContactForm({ ...contactForm, priority: e.target.value })}
+                                            className="input"
+                                            style={{ background: 'var(--bg)', borderRadius: '16px', padding: '16px 20px' }}
+                                        >
+                                            <option value="low">ROUTINE_INQUIRY</option>
+                                            <option value="normal">STANDARD_ASSISTANCE</option>
+                                            <option value="high">URGENT_DIRECTIVE</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="input-group">
+                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '12px', letterSpacing: '0.1em' }}>ENCRYPTED_MESSAGE_BODY</label>
+                                    <textarea
+                                        required
+                                        value={contactForm.message}
+                                        onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                                        rows={6}
+                                        placeholder="PROVIDE_DETAIL_ON_MISSION_PARAMETERS_OR_SYSTEM_ERRORS..."
+                                        className="input"
+                                        style={{ background: 'var(--bg)', borderRadius: '24px', padding: '24px', resize: 'none' }}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={sending}
+                                    className="btn btn-primary"
                                     style={{
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--card)',
-                                        color: 'var(--text)',
-                                        fontSize: '0.95rem',
-                                        resize: 'vertical',
-                                        fontFamily: 'inherit'
+                                        padding: '24px',
+                                        borderRadius: '20px',
+                                        fontSize: '1rem',
+                                        fontWeight: '900',
+                                        gap: '12px',
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
                                     }}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={sending}
-                                style={{
-                                    padding: '0.75rem 2rem',
-                                    borderRadius: '0.75rem',
-                                    border: 'none',
-                                    background: 'var(--text)',
-                                    color: 'var(--bg)',
-                                    fontWeight: 800,
-                                    fontSize: '0.95rem',
-                                    cursor: sending ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    opacity: sending ? 0.6 : 1
-                                }}
-                            >
-                                <Send size={18} />
-                                {sending ? 'Sending...' : 'Send Message'}
-                            </button>
-                        </form>
-                    </div>
-                )}
-            </motion.div>
+                                >
+                                    <Send size={20} />
+                                    {sending ? 'UPLINKING...' : 'INITIALIZE_TRANSMISSION'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
 };

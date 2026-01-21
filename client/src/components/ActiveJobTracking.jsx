@@ -355,6 +355,20 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             </AnimatePresence>
                         </div>
                     )}
+
+                    {/* Mission Support Actions (Customer Only) */}
+                    {user.role === 'customer' && job.status !== 'completed' && job.status !== 'cancelled' && (
+                        <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', paddingTop: '40px' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '12px' }}>
+                                <ShieldAlert size={14} style={{ marginRight: '8px' }} />
+                                REPORT_INCIDENT
+                            </button>
+                            <button className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '12px' }}>
+                                <Zap size={14} style={{ marginRight: '8px' }} />
+                                ADD_BONUS
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Perspective - Map Area */}
@@ -368,27 +382,58 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     <GoogleMap job={job} user={user} />
 
                     {/* Floating HUD Elements */}
-                    <div className="glass" style={{
+                    <div style={{
                         position: 'absolute',
                         top: '32px',
                         left: '32px',
-                        padding: '16px 24px',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border)',
                         display: 'flex',
-                        alignItems: 'center',
+                        flexDirection: 'column',
                         gap: '12px',
-                        boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
+                        zIndex: 100
                     }}>
-                        <div style={{ position: 'relative', width: '10px', height: '10px' }}>
-                            <motion.div
-                                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'var(--success)' }}
-                            />
-                            <div style={{ position: 'absolute', inset: '1px', borderRadius: '50%', background: 'var(--success)', border: '2px solid white' }} />
+                        <div className="glass" style={{
+                            padding: '16px 24px',
+                            borderRadius: '20px',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
+                        }}>
+                            <div style={{ position: 'relative', width: '10px', height: '10px' }}>
+                                <motion.div
+                                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'var(--success)' }}
+                                />
+                                <div style={{ position: 'absolute', inset: '1px', borderRadius: '50%', background: 'var(--success)', border: '2px solid white' }} />
+                            </div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID_ACTIVE</span>
                         </div>
-                        <span style={{ fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID_ACTIVE</span>
+
+                        <div className="glass" style={{
+                            padding: '16px 24px',
+                            borderRadius: '20px',
+                            border: '1px solid var(--border)',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '24px',
+                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
+                            minWidth: '340px'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>SIGNAL</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--success)' }}>OPTIMAL</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>ENCRYPTION</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>AES-256</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>LATENCY</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>24ms</div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Chat Slide-over */}

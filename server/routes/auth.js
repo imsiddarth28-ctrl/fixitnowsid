@@ -78,6 +78,14 @@ router.post('/register/technician', async (req, res) => {
         });
         await tech.save();
 
+        // Notify Admin of new registration
+        try {
+            const pusher = require('../lib/pusher');
+            await pusher.trigger('admin-updates', 'new_technician', { tech });
+        } catch (pErr) {
+            console.error('Admin notification failed:', pErr);
+        }
+
         res.status(201).json({ message: 'Registration successful! Please wait for Admin approval to login.' });
     } catch (err) {
         res.status(500).json({ error: err.message });

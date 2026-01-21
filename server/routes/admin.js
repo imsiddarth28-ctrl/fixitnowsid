@@ -3,11 +3,12 @@ const router = express.Router();
 const Technician = require('../models/Technician');
 const Job = require('../models/Job');
 const User = require('../models/User');
+const pusher = require('../lib/pusher');
 
 // GET all technicians (for admin view)
 router.get('/technicians', async (req, res) => {
     try {
-        const technicians = await Technician.find().sort({ createdAt: -1 });
+        const technicians = await Technician.find().sort({ joinedAt: -1 });
         res.json(technicians);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -35,6 +36,10 @@ router.put('/approve-technician/:id', async (req, res) => {
             { isVerified: true },
             { new: true }
         );
+
+        // Notify Technician
+        await pusher.trigger(`user-${tech._id}`, 'account_verified', { tech });
+
         res.json(tech);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -50,6 +55,10 @@ router.put('/block-technician/:id', async (req, res) => {
             { isBlocked },
             { new: true }
         );
+
+        // Notify Technician
+        await pusher.trigger(`user-${tech._id}`, 'account_blocked', { isBlocked });
+
         res.json(tech);
     } catch (err) {
         res.status(500).json({ error: err.message });

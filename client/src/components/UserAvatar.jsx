@@ -37,8 +37,8 @@ const UserAvatar = ({ size = 40, user: propUser, style = {} }) => {
     return (
         <div style={{
             ...baseStyle,
-            background: '#1d1d1f',
-            color: '#fff',
+            background: 'var(--text)',
+            color: 'var(--bg)',
             textTransform: 'uppercase',
             letterSpacing: '-0.02em'
         }}>

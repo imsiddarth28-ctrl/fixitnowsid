@@ -13,8 +13,9 @@ import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
 import UserAvatar from './UserAvatar';
 import API_URL from '../config';
+import { subscribeToEvent } from '../socket';
 
-const CustomerDashboard = () => {
+const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [activeView, setActiveView] = useState('overview');
@@ -22,10 +23,12 @@ const CustomerDashboard = () => {
         totalBookings: 0,
         activeJobs: 0,
         completedJobs: 0,
-        totalSpent: 0
+        totalSpent: 0,
+        trends: {}
     });
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -38,7 +41,14 @@ const CustomerDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
-    }, []);
+
+        if (!user) return;
+
+        // Listen for job status changes to refresh dashboard stats
+        const unsub = subscribeToEvent(`user-${user.id}`, 'job_update', fetchDashboardData);
+
+        return () => unsub();
+    }, [user]);
 
     const fetchDashboardData = async () => {
         try {
@@ -70,46 +80,144 @@ const CustomerDashboard = () => {
                     gap: '12px',
                     padding: '12px 18px',
                     width: '100%',
-                    background: isActive ? 'var(--bg-tertiary)' : 'transparent',
-                    color: isActive ? 'var(--text)' : 'var(--text-secondary)',
+                    background: isActive ? 'var(--text)' : 'transparent',
+                    color: isActive ? 'var(--bg)' : 'var(--text-secondary)',
                     border: 'none',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: '16px',
                     cursor: 'pointer',
-                    fontSize: '0.95rem',
-                    fontWeight: isActive ? '600' : '500',
-                    transition: 'all 0.2s ease',
+                    fontSize: '0.9rem',
+                    fontWeight: isActive ? '800' : '600',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     textAlign: 'left'
                 }}
             >
-                <Icon size={20} style={{ opacity: isActive ? 1 : 0.7 }} />
-                <span>{label}</span>
+                <Icon size={18} style={{ opacity: isActive ? 1 : 0.7 }} />
+                <span>{label.toUpperCase()}</span>
             </motion.button>
         );
     };
 
     const StatCard = ({ label, value, icon: Icon, trend }) => (
-        <div className="bento-card" style={{ flex: 1, minWidth: '240px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <div className="bento-card glass" style={{ flex: 1, minWidth: '280px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <div style={{
-                    width: '40px', height: '40px', background: 'var(--bg-tertiary)',
-                    borderRadius: '12px', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: 'var(--text)'
+                    width: '48px', height: '48px', background: 'var(--text)',
+                    borderRadius: '16px', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: 'var(--bg)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                 }}>
-                    <Icon size={20} />
+                    <Icon size={22} />
                 </div>
                 {trend && (
-                    <div className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text)', height: 'fit-content' }}>
+                    <div className="badge" style={{
+                        background: 'var(--bg-tertiary)',
+                        color: 'var(--text)',
+                        height: 'fit-content',
+                        fontSize: '0.65rem',
+                        fontWeight: '900',
+                        letterSpacing: '0.05em'
+                    }}>
                         {trend}
                     </div>
                 )}
             </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '500' }}>{label}</div>
-            <div style={{ fontSize: '2rem', color: 'var(--text)', fontWeight: '800', letterSpacing: '-0.03em' }}>{value}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '800', letterSpacing: '0.05em' }}>{label.toUpperCase()}</div>
+            <div style={{ fontSize: '2.5rem', color: 'var(--text)', fontWeight: '900', letterSpacing: '-0.04em' }}>{value}</div>
         </div>
+    );
+
+    const ThemeToggle3D = () => (
+        <motion.button
+            onClick={toggleTheme}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '18px',
+                background: 'var(--text)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                overflow: 'hidden'
+            }}
+        >
+            <motion.div
+                animate={{ rotateY: theme === 'dark' ? 180 : 0 }}
+                transition={{ duration: 0.6, type: 'spring', stiffness: 200, damping: 20 }}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transformStyle: 'preserve-3d'
+                }}
+            >
+                {theme === 'light' ? (
+                    <Activity size={24} color="var(--bg)" />
+                ) : (
+                    <Shield size={24} color="var(--bg)" style={{ transform: 'rotateY(180deg)' }} />
+                )}
+            </motion.div>
+        </motion.button>
     );
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex' }}>
+            {/* Logout Confirmation Modal */}
+            <AnimatePresence>
+                {showLogoutConfirm && (
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 10000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)'
+                    }}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass"
+                            style={{
+                                width: '100%', maxWidth: '400px', padding: '40px',
+                                borderRadius: '32px', background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border)', textAlign: 'center'
+                            }}
+                        >
+                            <div style={{
+                                width: '64px', height: '64px', borderRadius: '24px',
+                                background: 'var(--bg-tertiary)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px'
+                            }}>
+                                <LogOut size={32} color="var(--error)" />
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '12px' }}>TERMINATE_SESSION?</h3>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontWeight: '500' }}>Are you sure you want to initialize session termination?</p>
+                            <div style={{ display: 'flex', gap: '16px' }}>
+                                <button
+                                    onClick={() => setShowLogoutConfirm(false)}
+                                    className="btn btn-secondary"
+                                    style={{ flex: 1, padding: '16px' }}
+                                >
+                                    ABORT
+                                </button>
+                                <button
+                                    onClick={logout}
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, padding: '16px', background: 'var(--error)' }}
+                                >
+                                    CONFIRM
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Sidebar */}
             <AnimatePresence>
                 {isSidebarOpen && (
@@ -120,55 +228,55 @@ const CustomerDashboard = () => {
                         style={{
                             position: 'fixed',
                             left: 0, top: 0, bottom: 0,
-                            width: '280px',
+                            width: '300px',
                             background: 'var(--bg-secondary)',
                             borderRight: '1px solid var(--border)',
-                            padding: '24px',
+                            padding: '32px',
                             display: 'flex',
                             flexDirection: 'column',
                             zIndex: 1000
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '64px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                 <div style={{
-                                    width: '32px', height: '32px', background: 'var(--accent)',
-                                    borderRadius: '10px', display: 'flex', alignItems: 'center',
-                                    justifyContent: 'center', color: 'var(--accent-foreground)'
+                                    width: '40px', height: '40px', background: 'var(--text)',
+                                    borderRadius: '12px', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', color: 'var(--bg)',
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                                 }}>
-                                    <Activity size={18} />
+                                    <Activity size={20} />
                                 </div>
-                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.04em' }}>FixItNow</span>
                             </div>
                             {window.innerWidth < 1024 && (
                                 <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
-                                    <X size={20} />
+                                    <X size={24} />
                                 </button>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                            <NavItem id="overview" icon={Activity} label="Overview" />
-                            <NavItem id="history" icon={History} label="My Bookings" />
-                            <NavItem id="wallet" icon={Wallet} label="Wallet & Pay" />
-                            <NavItem id="support" icon={HelpCircle} label="Help Center" />
-                            <NavItem id="profile" icon={Settings} label="Settings" />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                            <NavItem id="overview" icon={Activity} label="Control Center" />
+                            <NavItem id="history" icon={History} label="Operations" />
+                            <NavItem id="support" icon={HelpCircle} label="Neural Support" />
+                            <NavItem id="profile" icon={Settings} label="Identity Settings" />
                         </div>
 
-                        <div className="glass" style={{ padding: '20px', borderRadius: 'var(--radius-lg)', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px' }}>Pro Support</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Get priority assistance for any service issues.</div>
-                            <button className="btn btn-primary" style={{ width: '100%', padding: '0.6rem', fontSize: '0.8rem' }}>Contact Us</button>
+                        <div className="glass" style={{ padding: '24px', borderRadius: '24px', marginBottom: '32px', background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: '900', marginBottom: '8px', letterSpacing: '0.05em' }}>PRIORITY_OVERRIDE</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '20px', fontWeight: '500' }}>Emergency directive for immediate expert deployment.</div>
+                            <button className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '0.85rem', fontWeight: '900' }}>ACTIVATE</button>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }}>
-                            <UserAvatar size={40} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'var(--bg-tertiary)', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                            <UserAvatar size={44} />
                             <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Customer Account</div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: '900', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '700', letterSpacing: '0.05em' }}>AUTHORIZED_UNIT</div>
                             </div>
-                            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
-                                <LogOut size={18} />
+                            <button onClick={() => setShowLogoutConfirm(true)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
+                                <LogOut size={20} />
                             </button>
                         </div>
                     </motion.aside>
@@ -178,13 +286,13 @@ const CustomerDashboard = () => {
             {/* Main Wrapper */}
             <main style={{
                 flex: 1,
-                marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '280px' : '0',
+                marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '300px' : '0',
                 padding: '0 0 100px 0',
-                transition: 'margin 0.3sease'
+                transition: 'margin 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
                 {/* Header */}
                 <header style={{
-                    padding: '24px 40px',
+                    padding: '32px 48px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -192,48 +300,55 @@ const CustomerDashboard = () => {
                     top: 0,
                     zIndex: 100,
                     background: 'var(--glass-bg)',
-                    backdropFilter: 'blur(12px)',
+                    backdropFilter: 'blur(20px)',
                     borderBottom: '1px solid var(--border)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                         {!isSidebarOpen && (
                             <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text)' }}>
-                                <Menu size={24} />
+                                <Menu size={28} />
                             </button>
                         )}
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
-                            {activeView.charAt(0).toUpperCase() + activeView.slice(1)}
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.02em' }}>
+                            {activeView.toUpperCase()}_LOG
                         </h2>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
-                            {theme === 'dark' ? '☀️' : '🌙'}
-                        </button>
-                        <button className="btn btn-primary">
-                            <Plus size={18} />
-                            <span className="desktop-only">New Booking</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <ThemeToggle3D />
+                        <button
+                            onClick={() => setActiveTab('services')}
+                            className="btn btn-primary"
+                            style={{ padding: '0 24px', height: '56px', borderRadius: '18px', gap: '12px' }}
+                        >
+                            <Plus size={24} />
+                            <span className="desktop-only" style={{ fontWeight: '900' }}>INIT_MOD_BOOKING</span>
                         </button>
                     </div>
                 </header>
 
-                <div className="container" style={{ padding: '40px' }}>
+                <div className="container" style={{ padding: '48px' }}>
                     <AnimatePresence mode="wait">
                         {activeView === 'overview' && (
                             <motion.div
                                 key="overview"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.4 }}
                             >
-                                <div style={{ marginBottom: '40px' }}>
-                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.04em', marginBottom: '8px' }}>
-                                        Hello, {user?.name?.split(' ')[0]}
+                                <div style={{ marginBottom: '64px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'var(--success)' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>SYSTEM_NOMINAL</span>
+                                    </div>
+                                    <h1 style={{ fontSize: '4rem', fontWeight: '900', letterSpacing: '-0.06em', marginBottom: '12px', lineHeight: '1' }}>
+                                        GREETINGS, {user?.name?.split(' ')[0].toUpperCase()}
                                     </h1>
-                                    <p style={{ color: 'var(--text-secondary)' }}>Everything is running smoothly. How can we help today?</p>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>Neural interface active. All systems reporting functional status.</p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '48px' }}>
+                                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '64px' }}>
                                     <StatCard
                                         label="Live Tracking"
                                         value={stats.activeJobs}
@@ -261,32 +376,37 @@ const CustomerDashboard = () => {
                                 </div>
 
                                 <section>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Quick Access</h3>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                        <h3 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>QUICK_ACCESS_NODES</h3>
                                     </div>
                                     <div className="bento-grid">
                                         {[
-                                            { title: 'Emergency', desc: 'Instant dispatch', icon: Shield, col: 'span 4' },
-                                            { title: 'Find Pros', desc: 'Browse experts', icon: Search, col: 'span 4' },
-                                            { title: 'Messages', desc: 'Chat with team', icon: MessageSquare, col: 'span 4' },
-                                            { title: 'History', desc: 'Recent receipts', icon: History, col: 'span 6' },
-                                            { title: 'Settings', desc: 'Profile & privacy', icon: Settings, col: 'span 6' }
+                                            { title: 'EMERGENCY', desc: 'Instant dispatch protocol', icon: Shield, col: 'span 4', action: () => { } },
+                                            { title: 'FIND_PROS', desc: 'Browse authorized experts', icon: Search, col: 'span 4', action: () => setActiveTab('services') },
+                                            { title: 'COMMS', desc: 'Secure encryption channel', icon: MessageSquare, col: 'span 4', action: () => { } },
+                                            { title: 'HISTORY', desc: 'Immutable operation logs', icon: History, col: 'span 6', action: () => setActiveView('history') },
+                                            { title: 'IDENTITY', desc: 'Credential management', icon: Settings, col: 'span 6', action: () => setActiveView('profile') }
                                         ].map((action, i) => (
                                             <motion.div
                                                 key={i}
-                                                whileHover={{ y: -4 }}
-                                                className="bento-card"
+                                                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                                                onClick={action.action}
+                                                className="bento-card glass"
                                                 style={{
                                                     gridColumn: action.col,
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     justifyContent: 'center',
-                                                    cursor: 'pointer'
+                                                    cursor: 'pointer',
+                                                    padding: '32px',
+                                                    background: 'var(--bg-secondary)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '32px'
                                                 }}
                                             >
-                                                <div style={{ marginBottom: '16px', color: 'var(--text)' }}><action.icon size={28} /></div>
-                                                <div style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px' }}>{action.title}</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{action.desc}</div>
+                                                <div style={{ marginBottom: '20px', color: 'var(--text)' }}><action.icon size={32} /></div>
+                                                <div style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.02em' }}>{action.title}</div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{action.desc}</div>
                                             </motion.div>
                                         ))}
                                     </div>
@@ -295,19 +415,19 @@ const CustomerDashboard = () => {
                         )}
 
                         {activeView === 'history' && (
-                            <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <motion.div key="history" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                 <BookingHistory type="customer" />
                             </motion.div>
                         )}
 
                         {activeView === 'profile' && (
-                            <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <motion.div key="profile" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                 <ProfileSettings />
                             </motion.div>
                         )}
 
                         {activeView === 'support' && (
-                            <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <motion.div key="support" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                                 <SupportHelp />
                             </motion.div>
                         )}

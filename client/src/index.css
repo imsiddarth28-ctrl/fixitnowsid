@@ -246,6 +246,7 @@ h6 {
 /* Typography Gradient */
 .text-gradient {
   background: linear-gradient(to right, var(--text) 0%, var(--text-secondary) 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

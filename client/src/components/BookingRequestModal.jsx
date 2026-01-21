@@ -4,11 +4,14 @@ import { X, Clock, Calendar, AlertCircle, CheckCircle, User, MapPin, ArrowRight,
 import API_URL from '../config';
 
 const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId }) => {
-    const [step, setStep] = useState(1); // 1: Service selection, 2: Time/Schedule, 3: Confirm
+    const [step, setStep] = useState(1); // 1: Service selection, 2: Location selection, 3: Time/Schedule, 4: Confirm
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [technicianStatus, setTechnicianStatus] = useState(null);
     const [hasActiveBooking, setHasActiveBooking] = useState(false);
+    const [addressSearch, setAddressSearch] = useState('');
+    const [mapInstance, setMapInstance] = useState(null);
+    const [markerInstance, setMarkerInstance] = useState(null);
 
     const [bookingData, setBookingData] = useState({
         serviceType: '',
@@ -19,10 +22,97 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
         isScheduled: false,
         location: {
             address: '',
-            latitude: null,
-            longitude: null
+            latitude: 17.3850,
+            longitude: 78.4867
         }
     });
+
+    // Handle Map Initialization
+    useEffect(() => {
+        if (step === 2 && window.google && !mapInstance) {
+            const mapDiv = document.getElementById('booking-map');
+            if (mapDiv) {
+                const initialPos = { lat: bookingData.location.latitude || 17.3850, lng: bookingData.location.longitude || 78.4867 };
+                const map = new window.google.maps.Map(mapDiv, {
+                    center: initialPos,
+                    zoom: 15,
+                    styles: [
+                        { elementType: "geometry", stylers: [{ color: "#212121" }] },
+                        { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
+                        { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] }
+                    ],
+                    disableDefaultUI: true,
+                    zoomControl: true
+                });
+
+                const marker = new window.google.maps.Marker({
+                    position: initialPos,
+                    map: map,
+                    draggable: true,
+                    animation: window.google.maps.Animation.DROP
+                });
+
+                setMapInstance(map);
+                setMarkerInstance(marker);
+
+                marker.addListener('dragend', () => {
+                    const pos = marker.getPosition();
+                    const lat = pos.lat();
+                    const lng = pos.lng();
+                    updateLocation(lat, lng);
+                });
+
+                map.addListener('click', (e) => {
+                    const lat = e.latLng.lat();
+                    const lng = e.latLng.lng();
+                    marker.setPosition({ lat, lng });
+                    updateLocation(lat, lng);
+                });
+            }
+        }
+    }, [step]);
+
+    const updateLocation = async (lat, lng) => {
+        setBookingData(prev => ({
+            ...prev,
+            location: { ...prev.location, latitude: lat, longitude: lng }
+        }));
+
+        // Reverse Geocode
+        if (window.google) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    setBookingData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, address: results[0].formatted_address }
+                    }));
+                    setAddressSearch(results[0].formatted_address);
+                }
+            });
+        }
+    };
+
+    const handleSearchAddress = () => {
+        if (window.google && addressSearch) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ address: addressSearch }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    const pos = results[0].geometry.location;
+                    mapInstance.setCenter(pos);
+                    markerInstance.setPosition(pos);
+                    setBookingData(prev => ({
+                        ...prev,
+                        location: {
+                            address: results[0].formatted_address,
+                            latitude: pos.lat(),
+                            longitude: pos.lng()
+                        }
+                    }));
+                }
+            });
+        }
+    };
 
     const [availableSlots, setAvailableSlots] = useState([]);
 
@@ -82,20 +172,25 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
 
     const handleTimeSelect = (slot) => {
         setBookingData({ ...bookingData, scheduledTime: slot.time, isScheduled: true });
-        setStep(3);
+        setStep(4);
     };
 
     const handleSubmit = async () => {
+        if (!bookingData.location.address) {
+            alert('Please select a service location.');
+            return;
+        }
+
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/bookings/create`, {
+            const res = await fetch(`${API_URL}/api/bookings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customerId,
                     technicianId: technician._id,
                     ...bookingData,
-                    status: technicianStatus?.isBusy ? 'pending_approval' : 'accepted'
+                    status: technicianStatus?.isBusy ? 'pending' : 'pending' // Force pending for real flow
                 })
             });
 
@@ -109,6 +204,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
             onClose();
         } catch (err) {
             console.error('Booking failed:', err);
+            alert(err.message);
         } finally {
             setLoading(false);
         }
@@ -174,7 +270,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                 Booking Module / Step 0{step}
                             </div>
                             <h2 style={{ fontSize: '1.75rem', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
-                                {step === 1 ? 'Select Objective' : step === 2 ? 'Temporal Alignment' : 'Final Verification'}
+                                {step === 1 ? 'Select Objective' : step === 2 ? 'Target Location' : step === 3 ? 'Temporal Alignment' : 'Final Verification'}
                             </h2>
                         </div>
                         <button onClick={onClose} style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: 'var(--text)' }}>
@@ -217,7 +313,32 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                         )}
 
                         {step === 2 && (
-                            <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                            <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div className="glass" style={{ padding: '12px', borderRadius: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search for address..."
+                                        value={addressSearch}
+                                        onChange={(e) => setAddressSearch(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchAddress()}
+                                        style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none', fontWeight: '600', padding: '4px 8px' }}
+                                    />
+                                    <button onClick={handleSearchAddress} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.75rem' }}>GO</button>
+                                </div>
+                                <div id="booking-map" style={{ width: '100%', height: '300px', borderRadius: '24px', border: '1px solid var(--border)', overflow: 'hidden' }}></div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'center' }}>
+                                    Drag the marker to pinpoint your exact mission coordinates.
+                                </div>
+                                {bookingData.location.address && (
+                                    <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '0.85rem', fontWeight: '700' }}>
+                                        📍 {bookingData.location.address}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {step === 3 && (
+                            <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                                 {technicianStatus?.isBusy ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <div style={{ padding: '16px', background: 'rgba(255, 149, 0, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 149, 0, 0.1)', color: 'var(--warning)', fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -244,14 +365,14 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '32px', lineHeight: '1.6' }}>
                                             Technician is currently on standby. Deployment can begin immediately upon confirmation.
                                         </p>
-                                        <button onClick={() => setStep(3)} className="btn btn-primary" style={{ padding: '16px 48px' }}>INITIALIZE NOW</button>
+                                        <button onClick={() => setStep(4)} className="btn btn-primary" style={{ padding: '16px 48px' }}>INITIALIZE NOW</button>
                                     </div>
                                 )}
                             </motion.div>
                         )}
 
-                        {step === 3 && (
-                            <motion.div key="step3" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+                        {step === 4 && (
+                            <motion.div key="step4" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
                                 <div className="glass" style={{ padding: '28px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--bg-tertiary)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                         <div style={{ width: '40px', height: '40px', background: 'var(--text)', color: 'var(--bg)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -266,12 +387,17 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                         <div>
                                             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Schedule</div>
-                                            <div style={{ fontSize: '1rem', fontWeight: '700' }}>{bookingData.isScheduled ? bookingData.scheduledTime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Immediate Delivery'}</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: '700' }}>{bookingData.isScheduled && bookingData.scheduledTime ? bookingData.scheduledTime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Immediate Delivery'}</div>
                                         </div>
                                         <div>
                                             <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Execution Time</div>
                                             <div style={{ fontSize: '1rem', fontWeight: '700' }}>~{bookingData.estimatedDuration} Minutes</div>
                                         </div>
+                                    </div>
+
+                                    <div style={{}}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Mission Location</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', lineHeight: '1.4' }}>{bookingData.location.address}</div>
                                     </div>
 
                                     <div style={{ height: '1px', background: 'var(--border)' }} />
@@ -291,7 +417,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                     {step > 1 && (
                         <button onClick={() => setStep(step - 1)} className="btn btn-secondary" style={{ flex: 1, padding: '16px' }}>BACK</button>
                     )}
-                    {step === 3 ? (
+                    {step === 4 ? (
                         <button
                             onClick={handleSubmit}
                             disabled={loading}
@@ -302,7 +428,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                         </button>
                     ) : (
                         step !== 1 && (
-                            <button onClick={() => setStep(3)} className="btn btn-primary" style={{ flex: 2, padding: '16px' }}>SKIP TO SUMMARY</button>
+                            <button onClick={() => setStep(step + 1)} className="btn btn-primary" style={{ flex: 2, padding: '16px' }}>CONTINUE</button>
                         )
                     )}
                 </div>

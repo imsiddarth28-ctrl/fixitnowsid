@@ -6,7 +6,7 @@ const GoogleMap = ({ job, user, showLiveTracking = true }) => {
     const mapInstance = useRef(null);
     const technicianMarkerRef = useRef(null);
     const customerMarkerRef = useRef(null);
-    const routePolylineRef = useRef(null);
+    const directionsRendererRef = useRef(null);
     const [mapError, setMapError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [technicianLocation, setTechnicianLocation] = useState(null);
@@ -47,17 +47,21 @@ const GoogleMap = ({ job, user, showLiveTracking = true }) => {
                     gestureHandling: 'greedy'
                 });
 
+                // Add Traffic Layer
+                const trafficLayer = new window.google.maps.TrafficLayer();
+                trafficLayer.setMap(mapInstance.current);
+
                 // Add customer marker (destination)
                 customerMarkerRef.current = new window.google.maps.Marker({
                     position: { lat: customerLat, lng: customerLng },
                     map: mapInstance.current,
                     icon: {
                         path: window.google.maps.SymbolPath.CIRCLE,
-                        scale: 12,
+                        scale: 14,
                         fillColor: '#ef4444',
                         fillOpacity: 1,
                         strokeColor: '#ffffff',
-                        strokeWeight: 3
+                        strokeWeight: 4
                     },
                     title: 'Customer Location',
                     animation: window.google.maps.Animation.DROP
@@ -169,15 +173,22 @@ const GoogleMap = ({ job, user, showLiveTracking = true }) => {
         if (!window.google?.maps?.DirectionsService) return;
 
         const directionsService = new window.google.maps.DirectionsService();
-        const directionsRenderer = new window.google.maps.DirectionsRenderer({
-            map: mapInstance.current,
-            suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: '#3b82f6',
-                strokeWeight: 4,
-                strokeOpacity: 0.8
-            }
-        });
+        if (!directionsRendererRef.current) {
+            directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+                map: mapInstance.current,
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: '#000000',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 6,
+                    icons: [{
+                        icon: { path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2 },
+                        offset: '100%',
+                        repeat: '100px'
+                    }]
+                }
+            });
+        }
 
         directionsService.route(
             {
@@ -191,7 +202,7 @@ const GoogleMap = ({ job, user, showLiveTracking = true }) => {
             },
             (result, status) => {
                 if (status === 'OK') {
-                    directionsRenderer.setDirections(result);
+                    directionsRendererRef.current.setDirections(result);
 
                     const route = result.routes[0];
                     const leg = route.legs[0];

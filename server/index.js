@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Pusher = require('pusher');
+const pusher = require('./lib/pusher');
 require('dotenv').config();
 const connectToDatabase = require('./lib/mongodb');
 
@@ -9,13 +9,7 @@ const connectToDatabase = require('./lib/mongodb');
 const app = express();
 
 // Initialize Pusher
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-  useTLS: true
-});
+// Pusher instance imported from lib
 
 // Middleware
 app.use(cors());
@@ -40,7 +34,6 @@ const Payment = require('./models/Payment');
 const Complaint = require('./models/Complaint');
 const Message = require('./models/Message');
 
-// Routes
 // Routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -125,59 +118,7 @@ app.post('/api/jobs/:jobId/location', async (req, res) => {
 });
 
 // API: Cancel Job with Reason
-app.post('/api/jobs/:jobId/cancel', async (req, res) => {
-  try {
-    const { jobId } = req.params;
-    const { reason, reasonLabel, details, cancelledBy, cancelledAt } = req.body;
-
-    const job = await Job.findById(jobId);
-    if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
-    }
-
-    // Update job status and add cancellation data
-    job.status = 'cancelled';
-    job.cancellationData = {
-      reason,
-      reasonLabel,
-      details,
-      cancelledBy,
-      cancelledAt: cancelledAt || new Date().toISOString()
-    };
-    await job.save();
-
-    // Notify the other party via Pusher
-    await pusher.trigger(`job-${jobId}`, 'job_cancelled', {
-      jobId,
-      status: 'cancelled',
-      cancellationData: job.cancellationData,
-      message: `Job cancelled by ${cancelledBy}: ${reasonLabel}`
-    });
-
-    // Also notify user-specific channels
-    if (job.customerId) {
-      await pusher.trigger(`user-${job.customerId}`, 'job_cancelled', {
-        jobId,
-        message: 'Your job has been cancelled'
-      });
-    }
-    if (job.technicianId) {
-      await pusher.trigger(`user-${job.technicianId}`, 'job_cancelled', {
-        jobId,
-        message: 'Job has been cancelled'
-      });
-    }
-
-    res.json({
-      success: true,
-      job,
-      message: 'Job cancelled successfully'
-    });
-  } catch (err) {
-    console.error('Cancel job error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
+// Redundant cancel route removed (Unified at the bottom)
 
 
 // API: Technician Discovery
@@ -286,7 +227,9 @@ app.post('/api/bookings', async (req, res) => {
         isQueued: !!activeMission,
         customerName: customer.name || 'A Customer'
       });
-      console.log('[BOOKING SUCCESS] Pusher notified technician');
+      // Notify Admin
+      await pusher.trigger('admin-updates', 'new_booking', { job: newJob });
+      console.log('[BOOKING SUCCESS] Pusher notified technician and admin');
     } catch (pusherErr) {
       console.error('[PUSHER ERROR]', pusherErr);
       // We still return 201 because the job is saved in DB
@@ -489,6 +432,9 @@ app.put('/api/jobs/:jobId/status', async (req, res) => {
       await pusher.trigger(`user-${job.technicianId._id || job.technicianId}`, 'job_update', { job });
     }
 
+    // Notify Admin
+    await pusher.trigger('admin-updates', 'job_status_change', { job });
+
     res.json(job);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -511,47 +457,7 @@ app.put('/api/jobs/:jobId/rate', async (req, res) => {
   }
 });
 
-// API: Admin Reports
-app.get('/api/admin/technicians', async (req, res) => {
-  try {
-    const techs = await Technician.find({}).sort({ joinedAt: -1 });
-    res.json(techs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// API: Admin Tech Control
-app.put('/api/admin/approve-technician/:id', async (req, res) => {
-  try {
-    const tech = await Technician.findByIdAndUpdate(req.params.id, { isVerified: true }, { new: true });
-    res.json(tech);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/admin/block-technician/:id', async (req, res) => {
-  try {
-    const { isBlocked } = req.body;
-    const tech = await Technician.findByIdAndUpdate(req.params.id, { isBlocked }, { new: true });
-    res.json(tech);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/admin/bookings', async (req, res) => {
-  try {
-    const jobs = await Job.find({})
-      .populate('technicianId', 'name phone')
-      .populate('customerId', 'name email')
-      .sort({ createdAt: -1 });
-    res.json(jobs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Final Start logic below
 
 // Start Server
 const PORT = process.env.PORT || 5000;

@@ -13,6 +13,7 @@ import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
 import UserAvatar from './UserAvatar';
 import API_URL from '../config';
+import { subscribeToEvent } from '../socket';
 
 const TechnicianDashboard = () => {
     const { user, logout } = useAuth();
@@ -40,7 +41,18 @@ const TechnicianDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
-    }, []);
+
+        if (!user) return;
+
+        // Listen for new job requests or job status updates (e.g. cancellation)
+        const unsub1 = subscribeToEvent(`user-${user.id}`, 'new_job_request', fetchDashboardData);
+        const unsub2 = subscribeToEvent(`user-${user.id}`, 'job_update', fetchDashboardData);
+
+        return () => {
+            unsub1();
+            unsub2();
+        };
+    }, [user]);
 
     const fetchDashboardData = async () => {
         try {

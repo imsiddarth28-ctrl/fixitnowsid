@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import API_URL from '../config';
 import { Menu, X, Check, Ban, Activity, DollarSign, Users, Bell, Trash2, Shield, Search, TrendingUp, BarChart3, Settings, LogOut, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { subscribeToEvent } from '../socket';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -30,6 +31,26 @@ const AdminDashboard = () => {
             setLoading(false);
         };
         loadData();
+
+        // Real-time listeners
+        const unsub = subscribeToEvent('admin-updates', '*', (eventName, data) => {
+            console.log('[ADMIN EVENT]', eventName, data);
+            // We can be more specific, but for simplicity, any relevant event triggers a data refresh
+            if (['new_technician', 'new_booking', 'job_status_change', 'job_cancelled', 'technician_update'].includes(eventName)) {
+                fetchTechnicians();
+                fetchBookings();
+            }
+        });
+
+        // Specific listeners because subscribeToEvent might not support '*' easily depending on bind implementation
+        const unsub1 = subscribeToEvent('admin-updates', 'new_technician', fetchTechnicians);
+        const unsub2 = subscribeToEvent('admin-updates', 'new_booking', fetchBookings);
+        const unsub3 = subscribeToEvent('admin-updates', 'job_status_change', fetchBookings);
+        const unsub4 = subscribeToEvent('admin-updates', 'job_cancelled', fetchBookings);
+
+        return () => {
+            unsub1(); unsub2(); unsub3(); unsub4();
+        };
     }, []);
 
     const fetchTechnicians = async () => {
