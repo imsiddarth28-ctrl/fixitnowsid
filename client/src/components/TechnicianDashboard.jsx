@@ -71,6 +71,26 @@ const TechnicianDashboard = () => {
         }
     };
 
+    const handleRequestAction = async (jobId, newStatus) => {
+        try {
+            const res = await fetch(`${API_URL}/api/jobs/${jobId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (res.ok) {
+                // Remove from pending list locally or just refresh
+                setPendingRequests(prev => prev.filter(r => r._id !== jobId));
+                fetchDashboardData();
+                alert(`MISSION_${newStatus === 'accepted' ? 'INITIALIZED' : 'TERMINATED'}`);
+            }
+        } catch (err) {
+            console.error('Request action failed:', err);
+            alert('PROTOCOL_ERROR: Action execution failed.');
+        }
+    };
+
     const toggleAvailability = async () => {
         try {
             const res = await fetch(`${API_URL}/api/technicians/${user.id}/availability`, {
@@ -336,7 +356,7 @@ const TechnicianDashboard = () => {
                                                         </div>
                                                         <div>
                                                             <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{req.serviceType}</div>
-                                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Customer: {req.customerName} • {req.distance || '2.4 km'} away</div>
+                                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Customer: {req.customerId?.name || req.customerName} • {req.distance || '2.4 km'} away</div>
                                                         </div>
                                                     </div>
                                                     <button
@@ -365,11 +385,75 @@ const TechnicianDashboard = () => {
                         )}
 
                         {activeView === 'requests' && (
-                            <motion.div key="requests" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '32px' }}>Service Queue</h2>
-                                <div className="glass" style={{ padding: '100px', textAlign: 'center', borderRadius: 'var(--radius-lg)' }}>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Detailed queue management system loading...</p>
+                            <motion.div key="requests" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                <div style={{ marginBottom: '40px' }}>
+                                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em' }}>SERVICE_QUEUE</h2>
+                                    <p style={{ color: 'var(--text-secondary)' }}>Review and respond to pending mission requests from the field.</p>
                                 </div>
+
+                                {pendingRequests.length > 0 ? (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+                                        {pendingRequests.map((req, i) => (
+                                            <motion.div
+                                                key={i}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i * 0.1 }}
+                                                className="bento-card glass"
+                                                style={{ border: '1px solid var(--border)', padding: '32px' }}
+                                            >
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                                                    <div className="glass" style={{ width: '64px', height: '64px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)' }}>
+                                                        <Target size={32} />
+                                                    </div>
+                                                    {req.isEmergency && (
+                                                        <div className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', height: 'fit-content' }}>
+                                                            PRIORITY_OVERRIDE
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div style={{ marginBottom: '32px' }}>
+                                                    <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '4px' }}>{req.serviceType.toUpperCase()}</h3>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '600' }}>
+                                                        <User size={14} />
+                                                        <span>{req.customerId?.name || req.customerName}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="glass" style={{ padding: '20px', borderRadius: '16px', background: 'var(--bg-secondary)', marginBottom: '32px' }}>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.1em' }}>MISSION_COORDINATES</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: '700', lineHeight: 1.4 }}>{req.location?.address}</div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '12px' }}>
+                                                    <button
+                                                        onClick={() => handleRequestAction(req._id, 'cancelled')}
+                                                        className="btn btn-secondary"
+                                                        style={{ flex: 1, padding: '16px', fontWeight: '800' }}
+                                                    >
+                                                        BYPASS
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRequestAction(req._id, 'accepted')}
+                                                        className="btn btn-primary"
+                                                        style={{ flex: 2, padding: '16px', fontWeight: '900', background: 'var(--text)', color: 'var(--bg)' }}
+                                                    >
+                                                        ACCEPT_MISSION
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="glass" style={{ padding: '120px 40px', textAlign: 'center', borderRadius: '32px', border: '1px solid var(--border)' }}>
+                                        <div style={{ width: '80px', height: '80px', background: 'var(--bg-tertiary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                            <Zap size={32} style={{ opacity: 0.2 }} />
+                                        </div>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>Queue is Clear</h3>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>No pending mission requests detected in your sector.</p>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
