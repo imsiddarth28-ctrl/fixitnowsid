@@ -4,7 +4,7 @@ import { X, Clock, Calendar, AlertCircle, CheckCircle, User, MapPin, ArrowRight,
 import API_URL from '../config';
 
 const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId }) => {
-    const [step, setStep] = useState(1); // 1: Service selection, 2: Location selection, 3: Time/Schedule, 4: Confirm
+    const [step, setStep] = useState(technician.serviceType ? 2 : 1); // Skip step 1 if tech has serviceType
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [technicianStatus, setTechnicianStatus] = useState(null);
@@ -15,7 +15,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
     const [mapError, setMapError] = useState(null);
 
     const [bookingData, setBookingData] = useState({
-        serviceType: '',
+        serviceType: technician.serviceType || '',
         description: '',
         urgency: 'normal',
         estimatedDuration: 60,
@@ -332,7 +332,9 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                 Booking Module / Step 0{step}
                             </div>
                             <h2 style={{ fontSize: '1.75rem', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
-                                {step === 1 ? 'Select Objective' : step === 2 ? 'Target Location' : step === 3 ? 'Temporal Alignment' : 'Final Verification'}
+                                {step === 1 ? 'Select Objective' :
+                                    step === 2 ? (technician.serviceType ? `${technician.serviceType.toUpperCase()}_DEPLOYMENT` : 'Target Location') :
+                                        step === 3 ? 'Temporal Alignment' : 'Final Verification'}
                             </h2>
                         </div>
                         <button onClick={onClose} style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: 'var(--text)' }}>
@@ -376,6 +378,12 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
 
                         {step === 2 && (
                             <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {technician.serviceType && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', fontWeight: '900', fontSize: '0.75rem', background: 'rgba(0,0,0,0.03)', padding: '10px 16px', borderRadius: '12px', border: '1px dotted var(--border)' }}>
+                                        <ShieldCheck size={14} />
+                                        AUTO_LOCKED: {technician.serviceType.toUpperCase()}_MISSION_SELECTED
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', gap: '12px' }}>
                                     <div className="glass" style={{ flex: 1, padding: '12px', borderRadius: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
                                         <MapPin size={20} style={{ marginTop: '4px', opacity: 0.5 }} />
