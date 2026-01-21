@@ -16,8 +16,8 @@
   --glass-border: rgba(0, 0, 0, 0.1);
   --shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 
-  --success: #000000;
-  /* Minimalist success */
+  --success: #10b981;
+  /* Modern Green */
   --error: #ff3b30;
   --warning: #ff9500;
 

@@ -136,9 +136,7 @@ const MainApp = () => {
           activeJob ? (
             <ActiveJobTracking job={activeJob} user={user} onStatusUpdate={setActiveJob} />
           ) : (
-            <div style={{ display: 'flex' }}>
-              <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
-            </div>
+            <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
           )
         ) : (
           <TechnicianDashboard activeJob={activeJob} setActiveJob={setActiveJob} setActiveTab={setActiveTab} />
