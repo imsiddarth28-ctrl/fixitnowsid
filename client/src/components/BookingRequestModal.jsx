@@ -12,6 +12,7 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
     const [addressSearch, setAddressSearch] = useState('');
     const [mapInstance, setMapInstance] = useState(null);
     const [markerInstance, setMarkerInstance] = useState(null);
+    const [mapError, setMapError] = useState(null);
 
     const [bookingData, setBookingData] = useState({
         serviceType: '',
@@ -94,23 +95,51 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
     };
 
     const handleSearchAddress = () => {
-        if (window.google && addressSearch) {
+        if (!addressSearch) return;
+        setMapError(null);
+        if (window.google) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ address: addressSearch }, (results, status) => {
                 if (status === 'OK' && results[0]) {
                     const pos = results[0].geometry.location;
-                    mapInstance.setCenter(pos);
-                    markerInstance.setPosition(pos);
+                    const lat = pos.lat();
+                    const lng = pos.lng();
+
+                    if (mapInstance) mapInstance.setCenter(pos);
+                    if (markerInstance) markerInstance.setPosition(pos);
+
                     setBookingData(prev => ({
                         ...prev,
                         location: {
                             address: results[0].formatted_address,
-                            latitude: pos.lat(),
-                            longitude: pos.lng()
+                            latitude: lat,
+                            longitude: lng
                         }
                     }));
+                    setAddressSearch(results[0].formatted_address);
+                } else {
+                    setMapError('Address not found. Please be more specific.');
                 }
             });
+        }
+    };
+
+    const handleDetectLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const pos = { lat, lng };
+
+                    if (mapInstance) mapInstance.setCenter(pos);
+                    if (markerInstance) markerInstance.setPosition(pos);
+                    updateLocation(lat, lng);
+                },
+                (error) => {
+                    setMapError('Unable to detect location. Please search manually.');
+                }
+            );
         }
     };
 
@@ -314,24 +343,40 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
 
                         {step === 2 && (
                             <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div className="glass" style={{ padding: '12px', borderRadius: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Search for address..."
-                                        value={addressSearch}
-                                        onChange={(e) => setAddressSearch(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchAddress()}
-                                        style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none', fontWeight: '600', padding: '4px 8px' }}
-                                    />
-                                    <button onClick={handleSearchAddress} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.75rem' }}>GO</button>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <div className="glass" style={{ flex: 1, padding: '12px', borderRadius: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
+                                        <MapPin size={20} style={{ marginTop: '4px', opacity: 0.5 }} />
+                                        <input
+                                            type="text"
+                                            placeholder="Enter mission address..."
+                                            value={addressSearch}
+                                            onChange={(e) => setAddressSearch(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && handleSearchAddress()}
+                                            style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none', fontWeight: '600' }}
+                                        />
+                                        <button onClick={handleSearchAddress} className="btn btn-primary" style={{ padding: '8px 20px', fontSize: '0.75rem' }}>SEARCH</button>
+                                    </div>
+                                    <button onClick={handleDetectLocation} className="btn btn-secondary" style={{ padding: '12px', borderRadius: '16px' }}>
+                                        <Zap size={20} />
+                                    </button>
                                 </div>
+                                {mapError && <div style={{ color: 'var(--error)', fontSize: '0.75rem', fontWeight: '700' }}>{mapError}</div>}
                                 <div id="booking-map" style={{ width: '100%', height: '300px', borderRadius: '24px', border: '1px solid var(--border)', overflow: 'hidden' }}></div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'center' }}>
                                     Drag the marker to pinpoint your exact mission coordinates.
                                 </div>
                                 {bookingData.location.address && (
-                                    <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '0.85rem', fontWeight: '700' }}>
-                                        📍 {bookingData.location.address}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '0.85rem', fontWeight: '700' }}>
+                                            📍 {bookingData.location.address}
+                                        </div>
+                                        <button
+                                            onClick={() => setStep(3)}
+                                            className="btn btn-primary"
+                                            style={{ width: '100%', padding: '14px', borderRadius: '16px', fontWeight: '800' }}
+                                        >
+                                            ESTABLISH PERIMETER
+                                        </button>
                                     </div>
                                 )}
                             </motion.div>
@@ -342,16 +387,22 @@ const BookingRequestModal = ({ technician, onClose, onBookingCreated, customerId
                                 {technicianStatus?.isBusy ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <div style={{ padding: '16px', background: 'rgba(255, 149, 0, 0.05)', borderRadius: '16px', border: '1px solid rgba(255, 149, 0, 0.1)', color: 'var(--warning)', fontSize: '0.85rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <Clock size={18} /> Next available synchronization windows:
+                                            <Clock size={18} /> Tech busy. Accept Wait Protocol?
                                         </div>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', fontWeight: '500' }}>
+                                            The technician is finishing a current mission. You can join their priority queue to be served next immediately after.
+                                        </p>
                                         {availableSlots.map((slot, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => handleTimeSelect(slot)}
                                                 className="bento-card"
-                                                style={{ padding: '20px', textAlign: 'left', fontWeight: '800', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                style={{ padding: '20px', textAlign: 'left', fontWeight: '800', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border)' }}
                                             >
-                                                {slot.label}
+                                                <div>
+                                                    <div style={{ fontSize: '0.95rem' }}>{slot.label}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>ESTIMATED START</div>
+                                                </div>
                                                 <ChevronRight size={18} />
                                             </button>
                                         ))}

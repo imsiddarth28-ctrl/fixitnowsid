@@ -48,7 +48,8 @@ const TechnicianList = ({ onBookingSuccess }) => {
             tech.serviceType?.toLowerCase() === selectedCategory.toLowerCase();
         const matchesSearch = tech.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             tech.specialty?.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        // Only show technicians that are available or busy (visible)
+        return matchesCategory && matchesSearch && tech.isAvailable !== false;
     });
 
     const TechCard = ({ tech }) => (
@@ -122,15 +123,22 @@ const TechnicianList = ({ onBookingSuccess }) => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: tech.isBusy ? 'var(--warning)' : 'var(--success)', fontWeight: '800' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.85rem',
+                    color: !tech.isAvailable ? 'var(--text-muted)' : (tech.isBusy ? 'var(--warning)' : 'var(--success)'),
+                    fontWeight: '800'
+                }}>
                     <div style={{
                         width: '8px',
                         height: '8px',
                         borderRadius: '50%',
-                        background: tech.isBusy ? 'var(--warning)' : 'var(--success)',
-                        boxShadow: `0 0 10px ${tech.isBusy ? 'var(--warning)' : 'var(--success)'}`
+                        background: !tech.isAvailable ? 'var(--text-muted)' : (tech.isBusy ? 'var(--warning)' : 'var(--success)'),
+                        boxShadow: tech.isAvailable ? `0 0 10px ${tech.isBusy ? 'var(--warning)' : 'var(--success)'}` : 'none'
                     }} />
-                    {tech.isBusy ? 'BUSY' : 'READY_NOW'}
+                    {!tech.isAvailable ? 'OFFLINE' : (tech.isBusy ? 'IN_JOB' : 'READY_NOW')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--text)', fontWeight: '900', letterSpacing: '0.02em' }}>
                     PRO_FILE <ChevronRight size={18} />

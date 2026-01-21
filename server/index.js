@@ -55,7 +55,7 @@ app.get('/api/health', (req, res) => {
 // API: Send Message & Trigger Pusher
 app.post('/api/messages', async (req, res) => {
   try {
-    const { jobId, senderId, senderRole, text, receiverId } = req.body;
+    const { jobId, senderId, senderRole, text } = req.body;
     const newMessage = new Message({ jobId, senderId, senderRole, text });
     await newMessage.save();
 
@@ -67,6 +67,29 @@ app.post('/api/messages', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Helper: Formula for ETA/Distance (Haversine/Linear Approximation)
+const calculateEstimatedArrival = (techLoc, destLoc, status) => {
+  if (!techLoc || !destLoc) return 30; // Default 30 mins
+  const R = 6371; // Earth radius in km
+  const dLat = (destLoc.latitude - techLoc.latitude) * Math.PI / 180;
+  const dLon = (destLoc.longitude - techLoc.longitude) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(techLoc.latitude * Math.PI / 180) * Math.cos(destLoc.latitude * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+
+  // Speed ~30km/h in city
+  const travelTime = (distance / 30) * 60;
+
+  // Status check logic
+  let buffer = 0;
+  if (status === 'in_progress') buffer = 20; // 20 mins remaining usually
+  if (status === 'accepted' || status === 'on_way') buffer = 5;
+
+  return Math.round(travelTime + buffer + 10); // 10 min buffer for parking/overhead
+};
 
 // API: Chat History
 app.get('/api/chat/:jobId', async (req, res) => {
@@ -343,19 +366,39 @@ app.get('/api/customers/:id/active-booking', async (req, res) => {
   }
 });
 
-// API: Technician Availability & Busy Status
+// API: Technician Availability & Busy Status (Enhanced with DSA ETA)
 app.get('/api/technicians/:id/availability', async (req, res) => {
   try {
+    const { lat, lng } = req.query;
     const tech = await Technician.findById(req.params.id);
     const activeJob = await Job.findOne({
       technicianId: req.params.id,
       status: { $in: ['accepted', 'on_way', 'arrived', 'in_progress'] }
     });
 
+    let estimatedFreeTime = null;
+    let precisionETA = 30; // Default
+
+    if (activeJob) {
+      const elapsed = (Date.now() - new Date(activeJob.updatedAt).getTime()) / 60000;
+      const remainingProgress = Math.max(10, 45 - elapsed);
+
+      if (lat && lng && activeJob.location) {
+        precisionETA = calculateEstimatedArrival(
+          { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+          activeJob.location,
+          activeJob.status
+        );
+      }
+
+      estimatedFreeTime = new Date(Date.now() + (remainingProgress + precisionETA) * 60000);
+    }
+
     res.json({
       isAvailable: tech.isAvailable,
       isBusy: !!activeJob,
-      estimatedFreeTime: activeJob ? new Date(Date.now() + 45 * 60000) : null // Placeholder 45 mins
+      estimatedFreeTime,
+      precisionETA
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -29,6 +29,7 @@ const TechnicianDashboard = () => {
     const [pendingRequests, setPendingRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
+    const [isAvailable, setIsAvailable] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -61,11 +62,29 @@ const TechnicianDashboard = () => {
                 const data = await res.json();
                 setStats(data.stats || stats);
                 setPendingRequests(data.pendingRequests || []);
+                setIsAvailable(data.isAvailable);
             }
         } catch (err) {
             console.error('Tech Dashboard error:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleAvailability = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/technicians/${user.id}/availability`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isAvailable: !isAvailable })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setIsAvailable(data.isAvailable);
+                fetchDashboardData();
+            }
+        } catch (err) {
+            console.error('Availability toggle error:', err);
         }
     };
 
@@ -180,10 +199,23 @@ const TechnicianDashboard = () => {
                             <NavItem id="profile" icon={Settings} label="Profile" />
                         </div>
 
-                        <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', background: 'var(--text)', color: 'var(--bg)', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '4px' }}>Go Online</div>
-                            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>Ready to start receiving new service requests?</div>
-                            <button className="btn" style={{ width: '100%', padding: '0.6rem', fontSize: '0.8rem', background: 'var(--bg)', color: 'var(--text)' }}>Go Online</button>
+                        <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', background: isAvailable ? 'var(--bg-tertiary)' : 'var(--text)', color: isAvailable ? 'var(--text)' : 'var(--bg)', marginBottom: '24px', transition: 'all 0.3s ease' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '4px' }}>{isAvailable ? 'Presence Active' : 'Presence Hidden'}</div>
+                            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>{isAvailable ? 'You are visible to customers in your area.' : 'Go online to start receiving new service requests.'}</div>
+                            <button
+                                onClick={toggleAvailability}
+                                className="btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.6rem',
+                                    fontSize: '0.8rem',
+                                    background: isAvailable ? 'var(--bg)' : 'var(--bg)',
+                                    color: 'var(--text)',
+                                    fontWeight: '800'
+                                }}
+                            >
+                                {isAvailable ? 'GO OFFLINE' : 'GO ONLINE'}
+                            </button>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }}>
@@ -233,8 +265,21 @@ const TechnicianDashboard = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', borderRight: '1px solid var(--border)' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#10b981', letterSpacing: '0.05em' }}>ONLINE</span>
+                            <span style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: isAvailable ? '#10b981' : 'var(--text-muted)',
+                                boxShadow: isAvailable ? '0 0 10px #10b981' : 'none'
+                            }}></span>
+                            <span style={{
+                                fontSize: '0.85rem',
+                                fontWeight: '800',
+                                color: isAvailable ? '#10b981' : 'var(--text-muted)',
+                                letterSpacing: '0.05em'
+                            }}>
+                                {isAvailable ? 'ONLINE' : 'OFFLINE'}
+                            </span>
                         </div>
                         <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.6rem', borderRadius: '12px' }}>
                             {theme === 'dark' ? '☀️' : '🌙'}
