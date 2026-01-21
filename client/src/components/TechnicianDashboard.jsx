@@ -127,7 +127,7 @@ const TechnicianDashboard = () => {
                 )}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '500' }}>{label}</div>
-            <div style={{ fontSize: '2rem', color: 'var(--text)', fontWeight: '800', letterSpacing: '-0.03em' }}>{value}</div>
+            <div style={{ fontSize: '1.6rem', color: 'var(--text)', fontWeight: '800', letterSpacing: '-0.03em' }}>{value}</div>
         </div>
     );
 

@@ -12,6 +12,7 @@ import BookingHistory from './BookingHistory';
 import ProfileSettings from './ProfileSettings';
 import SupportHelp from './SupportHelp';
 import UserAvatar from './UserAvatar';
+import TechnicianList from './TechnicianList';
 import API_URL from '../config';
 import { subscribeToEvent } from '../socket';
 
@@ -122,7 +123,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                 )}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '800', letterSpacing: '0.05em' }}>{label.toUpperCase()}</div>
-            <div style={{ fontSize: '2.5rem', color: 'var(--text)', fontWeight: '900', letterSpacing: '-0.04em' }}>{value}</div>
+            <div style={{ fontSize: '1.8rem', color: 'var(--text)', fontWeight: '900', letterSpacing: '-0.04em' }}>{value}</div>
         </div>
     );
 
@@ -287,7 +288,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
             <main style={{
                 flex: 1,
                 marginLeft: isSidebarOpen && window.innerWidth >= 1024 ? '300px' : '0',
-                padding: '0 0 100px 0',
+                padding: '0 0 60px 0',
                 transition: 'margin 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
                 {/* Header */}
@@ -327,7 +328,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                     </div>
                 </header>
 
-                <div className="container" style={{ padding: '48px' }}>
+                <div className="container" style={{ padding: '32px' }}>
                     <AnimatePresence mode="wait">
                         {activeView === 'overview' && (
                             <motion.div
@@ -337,15 +338,15 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                 exit={{ opacity: 0, scale: 0.98 }}
                                 transition={{ duration: 0.4 }}
                             >
-                                <div style={{ marginBottom: '64px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'var(--success)' }}>
+                                <div style={{ marginBottom: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', color: 'var(--success)' }}>
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: '900', letterSpacing: '0.1em' }}>SYSTEM_NOMINAL</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: '900', letterSpacing: '0.1em' }}>SYSTEM_NOMINAL</span>
                                     </div>
-                                    <h1 style={{ fontSize: '4rem', fontWeight: '900', letterSpacing: '-0.06em', marginBottom: '12px', lineHeight: '1' }}>
+                                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-0.06em', marginBottom: '8px', lineHeight: '1.1' }}>
                                         GREETINGS, {user?.name?.split(' ')[0].toUpperCase()}
                                     </h1>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>Neural interface active. All systems reporting functional status.</p>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: '500' }}>Neural interface active. All systems reporting functional status.</p>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '64px' }}>
@@ -382,7 +383,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                     <div className="bento-grid">
                                         {[
                                             { title: 'EMERGENCY', desc: 'Instant dispatch protocol', icon: Shield, col: 'span 4', action: () => { } },
-                                            { title: 'FIND_PROS', desc: 'Browse authorized experts', icon: Search, col: 'span 4', action: () => setActiveTab('services') },
+                                            { title: 'FIND_PROS', desc: 'Browse authorized experts', icon: Search, col: 'span 4', action: () => setActiveView('services') },
                                             { title: 'COMMS', desc: 'Secure encryption channel', icon: MessageSquare, col: 'span 4', action: () => { } },
                                             { title: 'HISTORY', desc: 'Immutable operation logs', icon: History, col: 'span 6', action: () => setActiveView('history') },
                                             { title: 'IDENTITY', desc: 'Credential management', icon: Settings, col: 'span 6', action: () => setActiveView('profile') }
@@ -398,19 +399,25 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                                     flexDirection: 'column',
                                                     justifyContent: 'center',
                                                     cursor: 'pointer',
-                                                    padding: '32px',
+                                                    padding: '24px',
                                                     background: 'var(--bg-secondary)',
                                                     border: '1px solid var(--border)',
-                                                    borderRadius: '32px'
+                                                    borderRadius: '24px'
                                                 }}
                                             >
-                                                <div style={{ marginBottom: '20px', color: 'var(--text)' }}><action.icon size={32} /></div>
-                                                <div style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.02em' }}>{action.title}</div>
-                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{action.desc}</div>
+                                                <div style={{ marginBottom: '16px', color: 'var(--text)' }}><action.icon size={24} /></div>
+                                                <div style={{ fontSize: '1rem', fontWeight: '900', marginBottom: '4px', letterSpacing: '-0.02em' }}>{action.title}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{action.desc}</div>
                                             </motion.div>
                                         ))}
                                     </div>
                                 </section>
+                            </motion.div>
+                        )}
+
+                        {activeView === 'services' && (
+                            <motion.div key="services" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                <TechnicianList onBookingSuccess={() => setActiveView('overview')} />
                             </motion.div>
                         )}
 

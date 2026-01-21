@@ -275,19 +275,19 @@ const AdminDashboard = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                             <div className="bento-card">
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Volume</div>
-                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>${stats.totalEarnings.toFixed(2)}</div>
+                                <div style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.03em' }}>${stats.totalEarnings.toFixed(2)}</div>
                             </div>
                             <div className="bento-card">
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Experts</div>
-                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.activeTechs}</div>
+                                <div style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.activeTechs}</div>
                             </div>
                             <div className="bento-card">
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Satisfaction</div>
-                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.avgRating}</div>
+                                <div style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.avgRating}</div>
                             </div>
                             <div className="bento-card">
                                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>Queue</div>
-                                <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.pendingBookings}</div>
+                                <div style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.03em' }}>{stats.pendingBookings}</div>
                             </div>
                         </div>
 
