@@ -45,7 +45,57 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
         return `${h > 0 ? h + ':' : ''}${m < 10 && h > 0 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    };
+
     const updateStatus = async (newStatus) => {
+        // Location check for completing job
+        if (newStatus === 'completed' && user.role === 'technician') {
+            const jobLat = job.location?.latitude || job.location?.lat;
+            const jobLng = job.location?.longitude || job.location?.lng;
+
+            if (jobLat && jobLng) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+
+                    const dist = calculateDistance(
+                        position.coords.latitude,
+                        position.coords.longitude,
+                        jobLat,
+                        jobLng
+                    );
+
+                    // Allow completion only if within 500 meters
+                    if (dist > 500) {
+                        alert(`You are ${Math.round(dist)}m away from the location. You must be at the customer's location to complete the job.`);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Location check failed', err);
+                    // Decide whether to block or warn. For now warn but allow if location fails? 
+                    // Strict requirement says "im at the customers location only im able to finish".
+                    // But if GPS fails, they can't finish. Let's block and ask them to enable GPS.
+                    alert('Unable to verify your location. Please ensure GPS is enabled to complete the job.');
+                    return;
+                }
+            }
+        }
+
         const originalJob = { ...job };
         onStatusUpdate({ ...job, status: newStatus });
 
@@ -65,7 +115,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.message || 'Mission Sync Failure');
+                throw new Error(errorData.error || errorData.message || 'Failed to update status');
             }
 
             const updatedJob = await res.json();
@@ -74,6 +124,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
             console.error('Error updating status:', err);
             onStatusUpdate(originalJob);
             if (newStatus === 'completed') setShowReceipt(false);
+            alert('Failed to update status. Please try again.');
         }
     };
 
@@ -124,7 +175,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                 letterSpacing: active ? '0.02em' : '0',
                 transition: 'all 0.3s ease'
             }}>
-                {label.toUpperCase()}
+                {label}
             </div>
             {active && (
                 <motion.div
@@ -180,7 +231,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             {job.serviceType?.toUpperCase()}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', letterSpacing: '0.1em' }}>
-                            REF_ID: {job._id.slice(-12).toUpperCase()}
+                            ORDER ID: {job._id.slice(-12).toUpperCase()}
                         </div>
                     </div>
                 </div>
@@ -194,7 +245,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                         style={{ padding: '12px 24px', display: 'flex', gap: '12px', alignItems: 'center' }}
                     >
                         <MessageSquare size={18} />
-                        <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>SYNC_COMM</span>
+                        <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>Chat</span>
                     </motion.button>
                     {job.status !== 'completed' && job.status !== 'cancelled' && (
                         <motion.button
@@ -204,7 +255,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             className="btn btn-secondary"
                             style={{ color: 'var(--error)', borderColor: 'rgba(255, 59, 48, 0.2)', padding: '12px 24px' }}
                         >
-                            <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>TERMINATE</span>
+                            <span style={{ fontWeight: '800', fontSize: '0.85rem' }}>Cancel Job</span>
                         </motion.button>
                     )}
                 </div>
@@ -243,7 +294,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             <Zap size={28} />
                         </div>
                         <div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>OPERATIONAL_STATUS</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>JOB STATUS</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{job.status.replace('_', ' ')}</div>
                         </div>
                     </div>
@@ -279,7 +330,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    TARGET_COORDINATES
+                                    SERVICE LOCATION
                                     {user.role === 'technician' && <ArrowUpRight size={12} color="var(--accent)" />}
                                 </div>
                                 <div style={{ fontSize: '0.95rem', fontWeight: '600', lineHeight: '1.4' }}>{job.location?.address}</div>
@@ -290,7 +341,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                                 <Clock size={20} />
                             </div>
                             <div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>CHRONO_ELAPSED</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>TIME ELAPSED</div>
                                 <div style={{ fontSize: '1.25rem', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{formatTime(elapsedSeconds)}</div>
                             </div>
                         </div>
@@ -315,7 +366,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             </div>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.05em' }}>
-                                    {user.role === 'customer' ? 'TECHNICIAN_LINK' : 'CLIENT_IDENTITY'}
+                                    {user.role === 'customer' ? 'TECHNICIAN' : 'CUSTOMER'}
                                 </div>
                                 <div style={{ fontSize: '1rem', fontWeight: '800' }}>{user.role === 'customer' ? (job.technicianId?.name || 'Assigned Pro') : (job.customerId?.name || 'Authorized Client')}</div>
                             </div>
@@ -331,15 +382,15 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
 
                     {/* Progress Matrix */}
                     <div style={{ marginTop: '56px' }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '24px', letterSpacing: '0.1em' }}>PROGRESS_MATRIX</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '24px', letterSpacing: '0.1em' }}>JOB PROGRESS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
                             <div style={{ position: 'absolute', left: '15px', top: '24px', bottom: '24px', width: '2px', background: 'var(--border)', zIndex: 1 }} />
                             {[
                                 { id: 'accepted', label: 'Accepted' },
-                                { id: 'on_way', label: 'En Route' },
-                                { id: 'arrived', label: 'On Location' },
-                                { id: 'in_progress', label: 'Processing' },
-                                { id: 'completed', label: 'Deployment Final' }
+                                { id: 'on_way', label: 'Heading to Location' },
+                                { id: 'arrived', label: 'Arrived at Location' },
+                                { id: 'in_progress', label: 'Job in Progress' },
+                                { id: 'completed', label: 'Completed' }
                             ].map((step, idx) => {
                                 const statuses = ['accepted', 'on_way', 'arrived', 'in_progress', 'completed'];
                                 const currentIdx = statuses.indexOf(job.status);
@@ -367,16 +418,16 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                                     exit={{ opacity: 0, y: -10 }}
                                 >
                                     {job.status === 'accepted' && (
-                                        <button onClick={() => updateStatus('on_way')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>INITIALIZE_TRANSIT</button>
+                                        <button onClick={() => updateStatus('on_way')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>Start Navigation</button>
                                     )}
                                     {job.status === 'on_way' && (
-                                        <button onClick={() => updateStatus('arrived')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>SIGNAL_ARRIVAL</button>
+                                        <button onClick={() => updateStatus('arrived')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>I've Arrived</button>
                                     )}
                                     {job.status === 'arrived' && (
-                                        <button onClick={() => updateStatus('in_progress')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>BEGIN_DEPLOYMENT</button>
+                                        <button onClick={() => updateStatus('in_progress')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>Start Job</button>
                                     )}
                                     {job.status === 'in_progress' && (
-                                        <button onClick={() => updateStatus('completed')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>FINALIZE_MISSION</button>
+                                        <button onClick={() => updateStatus('completed')} className="btn btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '0.95rem' }}>Complete Job</button>
                                     )}
                                 </motion.div>
                             </AnimatePresence>
@@ -388,11 +439,11 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                         <div style={{ marginTop: 'auto', display: 'flex', gap: '12px', paddingTop: '40px' }}>
                             <button className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '12px' }}>
                                 <ShieldAlert size={14} style={{ marginRight: '8px' }} />
-                                REPORT_INCIDENT
+                                Report Issue
                             </button>
                             <button className="btn btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '12px' }}>
                                 <Zap size={14} style={{ marginRight: '8px' }} />
-                                ADD_BONUS
+                                Add Tip
                             </button>
                         </div>
                     )}
@@ -437,7 +488,7 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                                 />
                                 <div style={{ position: 'absolute', inset: '1px', borderRadius: '50%', background: 'var(--success)', border: '2px solid white' }} />
                             </div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.05em' }}>LIVE_GRID</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.05em' }}>Live Tracking</span>
                         </div>
 
                         {!isMobile && (
@@ -445,23 +496,14 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                                 padding: '16px 24px',
                                 borderRadius: '20px',
                                 border: '1px solid var(--border)',
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                display: 'flex',
+                                alignItems: 'center',
                                 gap: '24px',
                                 boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
-                                minWidth: '340px'
                             }}>
-                                <div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>SIGNAL</div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '900', color: 'var(--success)' }}>OPTIMAL</div>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>ENCRYPTION</div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>AES-256</div>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--text-secondary)', marginBottom: '4px' }}>LATENCY</div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '900' }}>24ms</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: '700' }}>GPS Connected</div>
                                 </div>
                             </div>
                         )}

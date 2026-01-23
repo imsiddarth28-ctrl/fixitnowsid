@@ -31,6 +31,7 @@ const TechnicianDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
     const [isAvailable, setIsAvailable] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -84,11 +85,11 @@ const TechnicianDashboard = () => {
                 // Remove from pending list locally or just refresh
                 setPendingRequests(prev => prev.filter(r => r._id !== jobId));
                 fetchDashboardData();
-                alert(`MISSION_${newStatus === 'accepted' ? 'INITIALIZED' : 'TERMINATED'}`);
+                alert(`Job ${newStatus === 'accepted' ? 'Accepted' : 'Declined'}`);
             }
         } catch (err) {
             console.error('Request action failed:', err);
-            alert('PROTOCOL_ERROR: Action execution failed.');
+            alert('Action execution failed.');
         }
     };
 
@@ -221,7 +222,7 @@ const TechnicianDashboard = () => {
                         </div>
 
                         <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', background: isAvailable ? 'var(--bg-tertiary)' : 'var(--text)', color: isAvailable ? 'var(--text)' : 'var(--bg)', marginBottom: '24px', transition: 'all 0.3s ease' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '4px' }}>{isAvailable ? 'Presence Active' : 'Presence Hidden'}</div>
+                            <div style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '4px' }}>{isAvailable ? 'You are Online' : 'You are Offline'}</div>
                             <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>{isAvailable ? 'You are visible to customers in your area.' : 'Go online to start receiving new service requests.'}</div>
                             <button
                                 onClick={toggleAvailability}
@@ -243,9 +244,9 @@ const TechnicianDashboard = () => {
                             <UserAvatar size={40} />
                             <div style={{ flex: 1, overflow: 'hidden' }}>
                                 <div style={{ fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Expert Professional</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Technician</div>
                             </div>
-                            <button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
+                            <button onClick={() => setShowLogoutConfirm(true)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}>
                                 <LogOut size={18} />
                             </button>
                         </div>
@@ -388,8 +389,8 @@ const TechnicianDashboard = () => {
                         {activeView === 'requests' && (
                             <motion.div key="requests" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                                 <div style={{ marginBottom: '40px' }}>
-                                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em' }}>SERVICE_QUEUE</h2>
-                                    <p style={{ color: 'var(--text-secondary)' }}>Review and respond to pending mission requests from the field.</p>
+                                    <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em' }}>Pending Jobs</h2>
+                                    <p style={{ color: 'var(--text-secondary)' }}>Review and respond to new job requests.</p>
                                 </div>
 
                                 {pendingRequests.length > 0 ? (
@@ -409,7 +410,7 @@ const TechnicianDashboard = () => {
                                                     </div>
                                                     {req.isEmergency && (
                                                         <div className="badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', height: 'fit-content' }}>
-                                                            PRIORITY_OVERRIDE
+                                                            IMMEDIATE
                                                         </div>
                                                     )}
                                                 </div>
@@ -441,7 +442,7 @@ const TechnicianDashboard = () => {
                                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                                 >
                                                     <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.1em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        MISSION_COORDINATES
+                                                        JOB LOCATION
                                                         <ArrowUpRight size={14} />
                                                     </div>
                                                     <div style={{ fontSize: '0.9rem', fontWeight: '700', lineHeight: 1.4 }}>{req.location?.address}</div>
@@ -453,14 +454,14 @@ const TechnicianDashboard = () => {
                                                         className="btn btn-secondary"
                                                         style={{ flex: 1, padding: '16px', fontWeight: '800' }}
                                                     >
-                                                        BYPASS
+                                                        DECLINE
                                                     </button>
                                                     <button
                                                         onClick={() => handleRequestAction(req._id, 'accepted')}
                                                         className="btn btn-primary"
                                                         style={{ flex: 2, padding: '16px', fontWeight: '900', background: 'var(--text)', color: 'var(--bg)' }}
                                                     >
-                                                        ACCEPT_MISSION
+                                                        ACCEPT JOB
                                                     </button>
                                                 </div>
                                             </motion.div>
@@ -472,7 +473,7 @@ const TechnicianDashboard = () => {
                                             <Zap size={32} style={{ opacity: 0.2 }} />
                                         </div>
                                         <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>Queue is Clear</h3>
-                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>No pending mission requests detected in your sector.</p>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: '500' }}>No pending job requests found.</p>
                                     </div>
                                 )}
                             </motion.div>
@@ -504,6 +505,61 @@ const TechnicianDashboard = () => {
                     </AnimatePresence>
                 </div>
             </main>
+
+            {/* Logout Confirmation Modal */}
+            <AnimatePresence>
+                {showLogoutConfirm && (
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 2000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)'
+                    }}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass"
+                            style={{
+                                padding: '32px', borderRadius: '24px', width: '90%', maxWidth: '400px',
+                                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <div style={{
+                                width: '64px', height: '64px', borderRadius: '20px',
+                                background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto 24px'
+                            }}>
+                                <LogOut size={32} />
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '12px' }}>Confirm Logout</h3>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: '1.5' }}>
+                                Are you sure you want to end your session? You won't receive new job requests while offline.
+                            </p>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    onClick={() => setShowLogoutConfirm(false)}
+                                    className="btn btn-secondary"
+                                    style={{ flex: 1, padding: '16px', fontWeight: '700' }}
+                                >
+                                    Stay Online
+                                </button>
+                                <button
+                                    onClick={logout}
+                                    className="btn"
+                                    style={{
+                                        flex: 1, padding: '16px', background: '#ef4444', color: 'white',
+                                        border: 'none', fontWeight: '800'
+                                    }}
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
