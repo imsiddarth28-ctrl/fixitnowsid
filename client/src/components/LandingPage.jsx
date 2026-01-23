@@ -1,193 +1,355 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import {
-    Zap, Shield, Clock, ArrowRight, User,
-    CheckCircle, Globe, Star, Sparkles, MoveRight
+    Zap, Shield, Clock, ArrowRight, Star,
+    CheckCircle, Activity, Box, Layers
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 const LandingPage = ({ onFindTechnician, onJoinPro }) => {
-    const { user } = useAuth();
+    const containerRef = useRef(null);
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        offset: ["start start", "end end"]
+    });
 
-    const FeatureCard = ({ icon: Icon, title, desc, index }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + index * 0.1 }}
-            className="bento-card"
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.5rem',
-            }}
-        >
-            <div style={{
-                width: '56px', height: '56px', borderRadius: '18px',
-                background: 'var(--bg-tertiary)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center'
-            }}>
-                <Icon size={28} color="var(--text)" />
-            </div>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{title}</h3>
-            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>{desc}</p>
-        </motion.div>
-    );
+    // Parallax & 3D Tilt Logic for Hero
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const rotateX = useTransform(y, [-500, 500], [10, -10]);
+    const rotateY = useTransform(x, [-500, 500], [-10, 10]);
+
+    const handleMouseMove = (event) => {
+        const { clientX, clientY } = event;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        x.set(clientX - centerX);
+        y.set(clientY - centerY);
+    };
+
+    const springConfig = { stiffness: 100, damping: 30 };
+    const springRotateX = useSpring(rotateX, springConfig);
+    const springRotateY = useSpring(rotateY, springConfig);
 
     return (
-        <div style={{ background: 'var(--bg)', color: 'var(--text)', transition: 'all 0.3s ease' }}>
-            {/* Hero Section */}
-            <section style={{
-                padding: 'calc(var(--container-padding) * 2) 0',
-                textAlign: 'center',
-                maxWidth: '1200px',
-                margin: '0 auto'
-            }}>
+        <div ref={containerRef} style={{ background: 'var(--bg)', overflow: 'hidden' }} onMouseMove={handleMouseMove}>
+
+            {/* Background Gradients */}
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                >
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        padding: '8px 16px', borderRadius: '100px',
-                        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                        fontSize: '0.8rem', fontWeight: '700', marginBottom: '32px'
-                    }}>
-                        <Sparkles size={14} />
-                        NEXT-GEN HOME SERVICES
-                    </div>
-
-                    <h1 className="text-gradient" style={{
-                        fontSize: 'clamp(3rem, 10vw, 6rem)',
-                        fontWeight: '800',
-                        letterSpacing: '-0.04em',
-                        lineHeight: '0.9',
-                        marginBottom: '32px'
-                    }}>
-                        Instant Experts.<br />
-                        <span style={{ opacity: 0.5 }}>Zero Friction.</span>
-                    </h1>
-
-                    <p style={{
-                        fontSize: '1.25rem',
-                        color: 'var(--text-secondary)',
-                        maxWidth: '650px',
-                        margin: '0 auto 48px',
-                        lineHeight: '1.6'
-                    }}>
-                        The premium marketplace for on-demand home maintenance. Verified professionals, real-time tracking, unparalleled service quality.
-                    </p>
-
-                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button
-                            onClick={onFindTechnician}
-                            className="btn btn-primary"
-                            style={{ padding: '1.2rem 2.5rem', fontSize: '1.1rem', borderRadius: 'var(--radius-lg)' }}
-                        >
-                            Find an Expert <ArrowRight size={20} />
-                        </button>
-                        <button
-                            onClick={onJoinPro}
-                            className="btn btn-secondary"
-                            style={{ padding: '1.2rem 2.5rem', fontSize: '1.1rem', borderRadius: 'var(--radius-lg)' }}
-                        >
-                            Join as a Professional
-                        </button>
-                    </div>
-                </motion.div>
-
-                {/* Social Proof / Stats */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6, duration: 1 }}
-                    style={{
-                        marginTop: '100px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '80px',
-                        flexWrap: 'wrap'
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.5, 0.3],
+                        rotate: [0, 90, 0]
                     }}
-                >
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>4.9/5</div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Avg. Rating</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>150k+</div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Jobs Done</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>12 Min</div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Avg. Response</div>
-                    </div>
-                </motion.div>
-            </section>
+                    transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
+                    style={{
+                        position: 'absolute',
+                        top: '-20%', left: '-10%',
+                        width: '50vw', height: '50vw',
+                        background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)',
+                        borderRadius: '50%',
+                        filter: 'blur(60px)'
+                    }}
+                />
+                <motion.div
+                    animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.2, 0.4, 0.2],
+                        x: [0, 100, 0]
+                    }}
+                    transition={{ duration: 25, repeat: Infinity, repeatType: "reverse" }}
+                    style={{
+                        position: 'absolute',
+                        bottom: '-20%', right: '-10%',
+                        width: '60vw', height: '60vw',
+                        background: 'radial-gradient(circle, rgba(16,185,129,0.1) 0%, rgba(0,0,0,0) 70%)',
+                        borderRadius: '50%',
+                        filter: 'blur(80px)'
+                    }}
+                />
+            </div>
 
-            {/* Features Grid */}
+            {/* HERO SECTION */}
             <section style={{
-                padding: '80px 0',
-                maxWidth: '1200px',
-                margin: '0 auto'
+                position: 'relative',
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                perspective: '1000px',
+                zIndex: 1,
+                padding: '120px 20px 80px'
             }}>
-                <div className="bento-grid">
-                    <div style={{ gridColumn: 'span 4' }}>
+                <div style={{ maxWidth: '1400px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+                    {/* 3D Floating Elements */}
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                        <FloatingIcon icon={Box} delay={0} x={-400} y={-200} size={40} color="var(--accent)" />
+                        <FloatingIcon icon={Activity} delay={1} x={400} y={100} size={50} color="#10b981" />
+                        <FloatingIcon icon={Layers} delay={2} x={-300} y={300} size={30} color="#f59e0b" />
+                    </div>
+
+                    <motion.div
+                        style={{
+                            textAlign: 'center',
+                            rotateX: springRotateX,
+                            rotateY: springRotateY,
+                            transformStyle: 'preserve-3d',
+                            marginBottom: '4rem'
+                        }}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="glass"
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                padding: '8px 24px', borderRadius: '100px',
+                                fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.05em',
+                                marginBottom: '32px', border: '1px solid var(--accent)',
+                                color: 'var(--accent)', boxShadow: '0 0 20px rgba(59,130,246,0.2)'
+                            }}
+                        >
+                            <span className="pulse-dot" style={{ background: 'var(--accent)' }}></span>
+                            FUTURE OF MAINTENANCE
+                        </motion.div>
+
+                        <h1 className="text-gradient" style={{
+                            fontSize: 'clamp(3.5rem, 12vw, 8rem)',
+                            fontWeight: '900',
+                            letterSpacing: '-0.04em',
+                            lineHeight: '0.9',
+                            marginBottom: '32px',
+                            textShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                        }}>
+                            Fix It <br />
+                            <span style={{
+                                backgroundClip: 'text',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundImage: 'linear-gradient(to right, var(--text), var(--text-secondary))'
+                            }}>Right Now.</span>
+                        </h1>
+
+                        <p style={{
+                            fontSize: '1.25rem',
+                            color: 'var(--text-secondary)',
+                            maxWidth: '600px',
+                            margin: '0 auto 48px',
+                            lineHeight: '1.6',
+                            fontWeight: '500'
+                        }}>
+                            Experience the next dimension of home service.
+                            Instant connection to top-tier experts with real-time
+                            holographic tracking and military-grade encryption.
+                        </p>
+
+                        <div style={{
+                            display: 'flex', gap: '20px', justifyContent: 'center',
+                            flexWrap: 'wrap', transform: 'translateZ(50px)'
+                        }}>
+                            <motion.button
+                                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(59,130,246,0.4)' }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={onFindTechnician}
+                                className="btn btn-primary"
+                                style={{
+                                    padding: '1.2rem 3.5rem',
+                                    fontSize: '1.1rem',
+                                    borderRadius: '100px',
+                                    fontWeight: '800'
+                                }}
+                            >
+                                Find Expert <ArrowRight size={20} />
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05, background: 'var(--text)', color: 'var(--bg)' }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={onJoinPro}
+                                className="glass"
+                                style={{
+                                    padding: '1.2rem 3rem',
+                                    fontSize: '1.1rem',
+                                    borderRadius: '100px',
+                                    fontWeight: '700',
+                                    border: '1px solid var(--border)'
+                                }}
+                            >
+                                Join as Pro
+                            </motion.button>
+                        </div>
+                    </motion.div>
+
+                    {/* 3D Dashboard Preview */}
+                    <motion.div
+                        initial={{ opacity: 0, rotateX: 20, y: 100 }}
+                        animate={{ opacity: 1, rotateX: 10, y: 0 }}
+                        transition={{ duration: 1, delay: 0.2 }}
+                        style={{
+                            width: '100%',
+                            maxWidth: '1000px',
+                            aspectRatio: '16/9',
+                            background: 'var(--bg-secondary)',
+                            borderRadius: '24px',
+                            border: '1px solid var(--border)',
+                            boxShadow: '0 50px 100px -20px rgba(0,0,0,0.3)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            perspective: '1000px',
+                            transformStyle: 'preserve-3d'
+                        }}
+                    >
+                        {/* Mock UI Elements */}
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '12px' }}>
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f59e0b' }} />
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10b981' }} />
+                        </div>
+                        <div style={{ position: 'absolute', inset: 0, top: '60px', display: 'flex' }}>
+                            <div style={{ width: '240px', borderRight: '1px solid var(--border)', padding: '24px' }}>
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} style={{ height: '40px', borderRadius: '8px', background: 'var(--bg-tertiary)', marginBottom: '12px', opacity: 0.5 }} />
+                                ))}
+                            </div>
+                            <div style={{ flex: 1, padding: '24px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+                                <div className="glass" style={{ height: '200px', borderRadius: '16px', background: 'var(--bg-tertiary)' }} />
+                                <div className="glass" style={{ height: '200px', borderRadius: '16px', background: 'var(--bg-tertiary)' }} />
+                                <div className="glass" style={{ height: '100px', borderRadius: '16px', background: 'var(--bg-tertiary)', gridColumn: 'span 2' }} />
+                            </div>
+                        </div>
+
+                        {/* Overlay Gradient */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, var(--bg) 100%)', pointerEvents: 'none' }} />
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* FEATURES SECTION */}
+            <section style={{ padding: '100px 20px', position: 'relative', zIndex: 1 }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        style={{ textAlign: 'center', marginBottom: '80px' }}
+                    >
+                        <h2 style={{ fontSize: '3rem', fontWeight: '900', marginBottom: '16px' }}>Engineered for Perfection</h2>
+                        <p style={{ color: 'var(--text-secondary)' }}>Advanced tools for a seamless experience</p>
+                    </motion.div>
+
+                    <div className="bento-grid">
                         <FeatureCard
-                            index={0}
                             icon={Zap}
-                            title="Instant Booking"
-                            desc="Connect with available professionals in seconds. No more waiting on hold or endless calling."
+                            title="Instant Sync"
+                            desc="Real-time websocket connection for zero-latency updates between customer and technician."
+                            delay={0}
+                            colSpan={4}
                         />
-                    </div>
-                    <div style={{ gridColumn: 'span 4' }}>
                         <FeatureCard
-                            index={1}
                             icon={Shield}
-                            title="Fully Verified"
-                            desc="Every pro undergoes a rigorous background check and skills assessment for your peace of mind."
+                            title="Secure Core"
+                            desc="Enterprise-grade security protocols protecting every transaction and datastream."
+                            delay={0.1}
+                            colSpan={4}
                         />
-                    </div>
-                    <div style={{ gridColumn: 'span 4' }}>
                         <FeatureCard
-                            index={2}
                             icon={Clock}
-                            title="Real-time Tracking"
-                            desc="See exactly where your pro is and get live ETAs as they travel to your location."
+                            title="Precision Timing"
+                            desc="Live GPS tracking and sophisticated ETA algorithms."
+                            delay={0.2}
+                            colSpan={4}
                         />
                     </div>
                 </div>
             </section>
 
-            {/* Bottom CTA */}
-            <section style={{ padding: '100px 0', textAlign: 'center' }}>
-                <div className="glass" style={{ padding: '80px 40px', borderRadius: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-                    <h2 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '24px' }}>Ready to experience the future?</h2>
-                    <button className="btn btn-primary" onClick={onFindTechnician} style={{ padding: '1.2rem 3rem', fontSize: '1.1rem' }}>
-                        Book Your First Service
-                    </button>
+            {/* STATS 3D */}
+            <section style={{ padding: '40px 20px 120px' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
+                    <StatBox label="Active Pros" value="2,400+" color="#3b82f6" />
+                    <StatBox label="Safe Jobs" value="100%" color="#10b981" />
+                    <StatBox label="Avg Rating" value="4.98" color="#f59e0b" />
                 </div>
             </section>
-
-            {/* Simple Footer */}
-            <footer style={{
-                padding: '80px 0',
-                borderTop: '1px solid var(--border)',
-                textAlign: 'center',
-                background: 'var(--bg-secondary)'
-            }}>
-                <div style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '12px', fontFamily: 'var(--font-heading)' }}>FixItNow</div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>© 2026 FixItNow Inc. All rights reserved.</p>
-                <div style={{
-                    display: 'flex', justifyContent: 'center', gap: '32px',
-                    marginTop: '32px', fontSize: '0.9rem', color: 'var(--text)', fontWeight: '600'
-                }}>
-                    <a href="#" style={{ textDecoration: 'none', color: 'inherit', opacity: 0.7 }}>Privacy Policy</a>
-                    <a href="#" style={{ textDecoration: 'none', color: 'inherit', opacity: 0.7 }}>Terms of Service</a>
-                    <a href="#" style={{ textDecoration: 'none', color: 'inherit', opacity: 0.7 }}>Support Center</a>
-                </div>
-            </footer>
         </div>
     );
 };
+
+// Components
+const FloatingIcon = ({ icon: Icon, delay, x, y, size, color }) => (
+    <motion.div
+        animate={{
+            y: [0, -20, 0],
+            rotate: [0, 10, -10, 0]
+        }}
+        transition={{
+            duration: 6,
+            delay: delay,
+            repeat: Infinity,
+            ease: "easeInOut"
+        }}
+        style={{
+            position: 'absolute',
+            left: '50%', top: '50%',
+            marginLeft: x, marginTop: y,
+            filter: `drop-shadow(0 10px 20px ${color}40)`
+        }}
+    >
+        <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '20px', border: '1px solid var(--border)' }}>
+            <Icon size={size} color={color} />
+        </div>
+    </motion.div>
+);
+
+const FeatureCard = ({ icon: Icon, title, desc, delay, colSpan }) => (
+    <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay, duration: 0.5 }}
+        whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+        className="glass"
+        style={{
+            gridColumn: `span ${colSpan}`,
+            padding: '40px',
+            borderRadius: '24px',
+            border: '1px solid var(--border)',
+            background: 'var(--bg-secondary)',
+            display: 'flex', flexDirection: 'column', gap: '20px'
+        }}
+    >
+        <div style={{
+            width: '60px', height: '60px', borderRadius: '16px',
+            background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+            <Icon size={32} color="var(--text)" />
+        </div>
+        <div>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>{title}</h3>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>{desc}</p>
+        </div>
+    </motion.div>
+);
+
+const StatBox = ({ label, value, color }) => (
+    <motion.div
+        whileHover={{ scale: 1.1, rotate: [0, -2, 2, 0] }}
+        className="glass"
+        style={{
+            padding: '30px 50px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            border: '1px solid var(--border)',
+            minWidth: '200px'
+        }}
+    >
+        <div style={{ fontSize: '3.5rem', fontWeight: '900', color: color, lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', marginTop: '8px', letterSpacing: '0.1em' }}>{label}</div>
+    </motion.div>
+);
 
 export default LandingPage;

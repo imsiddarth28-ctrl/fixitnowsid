@@ -5,16 +5,19 @@ import API_URL from '../config';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simple check - in real app, validate token with backend
-        if (token) {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) setUser(JSON.parse(storedUser));
+        // Check for stored session immediately
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
+        if (storedToken && storedUser) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
         }
-    }, [token]);
+        setLoading(false);
+    }, []);
 
     const login = async (email, password, role) => {
         try {
@@ -67,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, register, updateUser }}>
+        <AuthContext.Provider value={{ user, token, loading, login, logout, register, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

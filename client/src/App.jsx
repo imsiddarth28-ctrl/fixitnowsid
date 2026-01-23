@@ -17,12 +17,33 @@ import ActiveJobTracking from './components/ActiveJobTracking';
 import { subscribeToEvent } from './socket';
 import API_URL from './config';
 
+import ThemeToggle from './components/ThemeToggle'; // Add this import
+
 const MainApp = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth(); // Add loading
   const { theme, toggleTheme } = useTheme();
+
+  // Handle Initial Loading State
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)'
+      }}>
+        <div className="spinner" /> {/* Assuming CSS spinner exists or just text */}
+      </div>
+    );
+  }
+
+  // Rest of the component logic...
+
 
   // Pusher listener for active jobs
   useEffect(() => {
@@ -213,9 +234,7 @@ const MainApp = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button onClick={toggleTheme} style={{ fontSize: '1.2rem', padding: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.8 }}>
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
+            <ThemeToggle />
 
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
