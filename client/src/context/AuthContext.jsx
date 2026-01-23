@@ -5,6 +5,8 @@ import API_URL from '../config';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
