@@ -17,6 +17,8 @@ import ActiveJobTracking from './components/ActiveJobTracking';
 import { subscribeToEvent } from './socket';
 import API_URL from './config';
 
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle'; // Add this import
 
 const MainApp = () => {
@@ -35,9 +37,15 @@ const MainApp = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'var(--bg)'
+        background: 'var(--bg)',
+        color: 'var(--text)'
       }}>
-        <div className="spinner" /> {/* Assuming CSS spinner exists or just text */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Loader2 size={48} style={{ opacity: 0.5 }} />
+        </motion.div>
       </div>
     );
   }
