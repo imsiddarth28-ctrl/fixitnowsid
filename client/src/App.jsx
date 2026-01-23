@@ -208,7 +208,7 @@ const MainApp = () => {
     <div className="app-container">
       {/* Navigation (Standard) - Strictly hidden for Admins and Customers (who have their own navs) */}
       {(!user || (user.role !== 'admin' && user.role !== 'customer')) && activeTab !== 'home' && (
-        <nav className={`navbar ${theme}`} style={{
+        <nav className={`navbar ${theme === 'light' ? 'light' : ''}`} style={{
           position: 'fixed',
           top: '1rem',
           left: '50%',

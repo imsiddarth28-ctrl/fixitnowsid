@@ -1,25 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Light Theme (Default) */
-  --bg: #ffffff;
-  --bg-secondary: #f8f8f8;
-  --bg-tertiary: #f2f2f2;
-  --text: #000000;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --border: #e5e5e5;
-  --border-strong: #000000;
-  --accent: #000000;
-  --accent-foreground: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.1);
-  --shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  /* Dark Theme (Default) */
+  --bg: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #171717;
+  --text: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #525252;
+  --border: #262626;
+  --border-strong: #ffffff;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --glass-bg: rgba(0, 0, 0, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 
   --success: #10b981;
-  /* Modern Green */
-  --error: #ff3b30;
-  --warning: #ff9500;
+  --error: #ef4444;
+  --warning: #f59e0b;
 
   --font-main: 'Inter', -apple-system, system-ui, sans-serif;
   --font-heading: 'Outfit', sans-serif;
@@ -32,20 +31,21 @@
   --gap: 1.5rem;
 }
 
-.dark {
-  --bg: #000000;
-  --bg-secondary: #111111;
-  --bg-tertiary: #1a1a1a;
-  --text: #ffffff;
-  --text-secondary: #a1a1a1;
-  --text-muted: #666666;
-  --border: #222222;
-  --border-strong: #ffffff;
-  --accent: #ffffff;
-  --accent-foreground: #000000;
-  --glass-bg: rgba(0, 0, 0, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+.light {
+  /* Light Theme */
+  --bg: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f3f4f6;
+  --text: #09090b;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+  --border-strong: #000000;
+  --accent: #000000;
+  --accent-foreground: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
 * {
