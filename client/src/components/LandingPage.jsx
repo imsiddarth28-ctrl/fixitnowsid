@@ -33,7 +33,7 @@ const LandingPage = ({ onFindTechnician, onJoinPro }) => {
     const springRotateY = useSpring(rotateY, springConfig);
 
     return (
-        <div ref={containerRef} style={{ background: 'var(--bg)', overflow: 'hidden' }} onMouseMove={handleMouseMove}>
+        <div ref={containerRef} style={{ background: 'var(--bg)', overflow: 'hidden', minHeight: '100vh', width: '100%' }} onMouseMove={handleMouseMove}>
 
             {/* Background Gradients */}
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
