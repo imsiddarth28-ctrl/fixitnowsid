@@ -72,6 +72,10 @@ const GoogleMap = ({ job, user, showLiveTracking = true }) => {
                     content: `<div style="color: #000; padding: 0.5rem; font-weight: 600;">
                         📍 Customer Location<br/>
                         <span style="font-size: 0.8rem; color: #666;">${job?.location?.address || 'Destination'}</span>
+                        <br/>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${customerLat},${customerLng}" target="_blank" style="color: #3b82f6; font-size: 0.75rem; display: block; margin-top: 4px; text-decoration: none;">
+                            Get Directions ↗
+                        </a>
                     </div>`
                 });
                 customerMarkerRef.current.addListener('click', () => {

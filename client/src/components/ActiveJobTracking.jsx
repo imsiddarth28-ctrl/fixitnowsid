@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Navigation, MapPin, Clock, Phone, MessageSquare,
     CheckCircle2, AlertCircle, X, ShieldAlert,
-    ArrowLeft, ChevronRight, Activity, Zap, ShieldCheck
+    ArrowLeft, ChevronRight, Activity, Zap, ShieldCheck, ArrowUpRight
 } from 'lucide-react';
 import ServiceReceipt from './ServiceReceipt';
 import Chat from './Chat';
@@ -249,12 +249,39 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        <div style={{ display: 'flex', gap: '20px' }}>
+                        <div
+                            onClick={() => {
+                                if (user.role === 'technician' && job.location) {
+                                    const lat = job.location.latitude || job.location.lat;
+                                    const lng = job.location.longitude || job.location.lng;
+                                    const query = lat && lng ? `${lat},${lng}` : encodeURIComponent(job.location.address);
+                                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+                                }
+                            }}
+                            style={{
+                                display: 'flex',
+                                gap: '20px',
+                                cursor: user.role === 'technician' ? 'pointer' : 'default',
+                                padding: '8px',
+                                borderRadius: '12px',
+                                transition: 'background 0.2s',
+                                margin: '-8px'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (user.role === 'technician') e.currentTarget.style.background = 'var(--bg-tertiary)';
+                            }}
+                            onMouseLeave={(e) => {
+                                if (user.role === 'technician') e.currentTarget.style.background = 'transparent';
+                            }}
+                        >
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                                 <MapPin size={20} />
                             </div>
                             <div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px' }}>TARGET_COORDINATES</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', letterSpacing: '0.1em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    TARGET_COORDINATES
+                                    {user.role === 'technician' && <ArrowUpRight size={12} color="var(--accent)" />}
+                                </div>
                                 <div style={{ fontSize: '0.95rem', fontWeight: '600', lineHeight: '1.4' }}>{job.location?.address}</div>
                             </div>
                         </div>

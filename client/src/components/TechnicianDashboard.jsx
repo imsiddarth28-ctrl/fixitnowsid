@@ -422,8 +422,28 @@ const TechnicianDashboard = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="glass" style={{ padding: '20px', borderRadius: '16px', background: 'var(--bg-secondary)', marginBottom: '32px' }}>
-                                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.1em' }}>MISSION_COORDINATES</div>
+                                                <div className="glass"
+                                                    onClick={() => {
+                                                        const lat = req.location?.latitude || req.location?.lat;
+                                                        const lng = req.location?.longitude || req.location?.lng;
+                                                        const query = lat && lng ? `${lat},${lng}` : encodeURIComponent(req.location?.address);
+                                                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+                                                    }}
+                                                    style={{
+                                                        padding: '20px',
+                                                        borderRadius: '16px',
+                                                        background: 'var(--bg-secondary)',
+                                                        marginBottom: '32px',
+                                                        cursor: 'pointer',
+                                                        transition: 'transform 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                >
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.1em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        MISSION_COORDINATES
+                                                        <ArrowUpRight size={14} />
+                                                    </div>
                                                     <div style={{ fontSize: '0.9rem', fontWeight: '700', lineHeight: 1.4 }}>{req.location?.address}</div>
                                                 </div>
 
