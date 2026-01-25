@@ -4,10 +4,24 @@ import Pusher from 'pusher-js';
 const PUSHER_KEY = import.meta.env.VITE_PUSHER_KEY || 'your_pusher_key';
 const PUSHER_CLUSTER = import.meta.env.VITE_PUSHER_CLUSTER || 'mt1';
 
-const pusher = new Pusher(PUSHER_KEY, {
-    cluster: PUSHER_CLUSTER,
-    forceTLS: true
-});
+let pusher;
+try {
+    pusher = new Pusher(PUSHER_KEY, {
+        cluster: PUSHER_CLUSTER,
+        forceTLS: true
+    });
+    console.log('[Pusher] Initialized successfully');
+} catch (error) {
+    console.warn('[Pusher] Failed to initialize:', error);
+    // Create a mock pusher object to prevent crashes
+    pusher = {
+        subscribe: () => ({
+            bind: () => { },
+            unbind: () => { }
+        }),
+        unsubscribe: () => { }
+    };
+}
 
 /**
  * Unified way to listen to events
@@ -16,13 +30,18 @@ const pusher = new Pusher(PUSHER_KEY, {
  * @param {function} callback 
  */
 export const subscribeToEvent = (channelName, eventName, callback) => {
-    const channel = pusher.subscribe(channelName);
-    channel.bind(eventName, callback);
+    try {
+        const channel = pusher.subscribe(channelName);
+        channel.bind(eventName, callback);
 
-    return () => {
-        channel.unbind(eventName, callback);
-        pusher.unsubscribe(channelName);
-    };
+        return () => {
+            channel.unbind(eventName, callback);
+            pusher.unsubscribe(channelName);
+        };
+    } catch (error) {
+        console.warn('[Pusher] Failed to subscribe to event:', error);
+        return () => { }; // Return empty cleanup function
+    }
 };
 
 export default pusher;
