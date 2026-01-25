@@ -28,31 +28,6 @@ const MainApp = () => {
   const { user, logout, loading } = useAuth(); // Add loading
   const { theme, toggleTheme } = useTheme();
 
-  // Handle Initial Loading State
-  if (loading) {
-    return (
-      <div style={{
-        height: '100vh',
-        width: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bg)',
-        color: 'var(--text)'
-      }}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <Loader2 size={48} style={{ opacity: 0.5 }} />
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Rest of the component logic...
-
-
   // Pusher listener for active jobs
   useEffect(() => {
     if (!user) return;
@@ -109,6 +84,29 @@ const MainApp = () => {
     };
     recoverJob();
   }, [user]);
+
+  // Handle Initial Loading State - MUST come after all hooks
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        color: 'var(--text)'
+      }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Loader2 size={48} style={{ opacity: 0.5 }} />
+        </motion.div>
+      </div>
+    );
+  }
+
 
   const handlePaymentSuccess = () => {
     alert('Payment Successful!');
