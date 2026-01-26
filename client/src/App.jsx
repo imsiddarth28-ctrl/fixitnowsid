@@ -226,7 +226,7 @@ const MainApp = () => {
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <h1 onClick={() => setActiveTab('home')} style={{ fontSize: '1.5rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'var(--font-heading)', margin: 0 }}>FixItNow</h1>
+            <h1 onClick={() => setActiveTab('home')} style={{ fontSize: '1.5rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'var(--font-heading)', margin: 0 }}>SAHAKAR</h1>
             <div className="desktop-only" style={{ display: 'flex', gap: '1.5rem' }}>
               <a href="#" onClick={() => setActiveTab('home')} style={{ fontSize: '0.95rem', fontWeight: 500, color: activeTab === 'home' ? 'var(--text)' : 'var(--text-muted)', textDecoration: 'none' }}>Home</a>
               <a href="#" onClick={() => setActiveTab('services')} style={{ fontSize: '0.95rem', fontWeight: 500, color: activeTab === 'services' ? 'var(--text)' : 'var(--text-muted)', textDecoration: 'none' }}>Experts</a>

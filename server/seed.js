@@ -4,7 +4,7 @@ const User = require('./models/User');
 const Technician = require('./models/Technician');
 require('dotenv').config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixitnow';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sahakar';
 
 const seedData = async () => {
     try {
@@ -23,7 +23,7 @@ const seedData = async () => {
         // Create Dummy Users
         const users = await User.insertMany([
             { name: 'Alice Customer', email: 'alice@example.com', password: hashedUserPass, phone: '555-0101' },
-            { name: 'Bob Admin', email: 'admin@fixitnow.com', password: hashedAdminPass, role: 'admin' }
+            { name: 'Bob Admin', email: 'admin@sahakar.com', password: hashedAdminPass, role: 'admin' }
         ]);
         console.log('Users seeded');
 

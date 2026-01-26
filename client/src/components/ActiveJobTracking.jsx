@@ -373,6 +373,16 @@ const ActiveJobTracking = ({ job, user, onStatusUpdate, onBack }) => {
                             <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                    const phoneNumber = user.role === 'customer'
+                                        ? (job.technicianId?.phone || '')
+                                        : (job.customerId?.phone || '');
+                                    if (phoneNumber) {
+                                        window.location.href = `tel:${phoneNumber}`;
+                                    } else {
+                                        alert('Phone number not available');
+                                    }
+                                }}
                                 style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-tertiary)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}
                             >
                                 <Phone size={18} />

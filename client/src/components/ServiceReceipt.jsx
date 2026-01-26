@@ -19,7 +19,7 @@ const ServiceReceipt = ({ job, onClose }) => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>FixItNow Receipt - ${job._id.slice(-6).toUpperCase()}</title>
+                <title>SAHAKAR Receipt - ${job._id.slice(-6).toUpperCase()}</title>
                 <style>
                     @page { margin: 15mm; }
                     body { font-family: 'Inter', -apple-system, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; color: #1d1d1f; }
@@ -45,7 +45,7 @@ const ServiceReceipt = ({ job, onClose }) => {
                         <p class="tx-id">TIMESTAMP: ${new Date().toISOString()}</p>
                     </div>
                     <div style="text-align: right;">
-                        <p style="font-weight: 900; margin: 0;">FIXITNOW</p>
+                        <p style="font-weight: 900; margin: 0;">SAHAKAR</p>
                         <p class="tx-id">PRO VERSION 2.0</p>
                     </div>
                 </div>
@@ -93,8 +93,8 @@ const ServiceReceipt = ({ job, onClose }) => {
                 </div>
                 
                 <div class="footer">
-                    <p><strong>FIXITNOW SECURE AUTHENTICATION REVEALED</strong></p>
-                    <p>This document verifies the completion of a digital service contract via FixItNow.</p>
+                    <p><strong>SAHAKAR SECURE AUTHENTICATION REVEALED</strong></p>
+                    <p>This document verifies the completion of a digital service contract via SAHAKAR.</p>
                     <p>All transactions are protected by end-to-end encryption and secure escrow systems.</p>
                 </div>
             </body>

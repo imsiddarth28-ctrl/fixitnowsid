@@ -1,6 +1,6 @@
-# FixItNow - Home Service Platform
+# SAHAKAR - Home Service Platform
 
-FixItNow is a real-time, AI-powered home service platform that intelligently connects customers to nearby technicians with live tracking, secure booking, and automated task management.
+SAHAKAR is a real-time, AI-powered home service platform that intelligently connects customers to nearby technicians with live tracking, secure booking, and automated task management.
 
 ## Project Goal
 Build a full-stack web application connecting customers with home service technicians (plumbers, electricians, etc.).

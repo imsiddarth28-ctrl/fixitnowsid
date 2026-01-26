@@ -118,7 +118,7 @@ const AuthModal = ({ onClose, onSuccess }) => {
 
                 <div style={{ marginBottom: '32px' }}>
                     <h2 style={{ fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)', color: 'var(--text)', marginBottom: '8px' }}>
-                        {isLogin ? 'Welcome back' : 'Join FixItNow'}
+                        {isLogin ? 'Welcome back' : 'Join SAHAKAR'}
                     </h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                         {isLogin ? 'Enter your details to access your account' : 'Start your journey with premium services'}

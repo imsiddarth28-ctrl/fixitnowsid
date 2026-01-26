@@ -85,7 +85,7 @@ const AdminLogin = () => {
                         fontFamily: 'var(--font-heading)',
                         marginBottom: '1rem'
                     }}>
-                        FixItNow
+                        SAHAKAR
                     </div>
                     <h2 style={{
                         fontSize: '1.75rem',
@@ -144,7 +144,7 @@ const AdminLogin = () => {
                         <input
                             type="email"
                             name="email"
-                            placeholder="admin@fixitnow.com"
+                            placeholder="admin@sahakar.com"
                             style={{
                                 width: '100%', padding: '0.8rem', background: 'var(--bg)',
                                 border: '1px solid var(--border)', color: 'var(--text)',

@@ -6,7 +6,7 @@ const User = require('../models/User');
 const Technician = require('../models/Technician');
 
 // SECRET
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_fixitnow';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_sahakar';
 
 // REGISTER USER
 router.post('/register/user', async (req, res) => {
@@ -213,7 +213,7 @@ router.put('/profile/user/:id', async (req, res) => {
 
         res.json({ message: 'Profile updated successfully', user: updatedUser });
     } catch (err) {
-        res.status(500).json({ error: err.message});
+        res.status(500).json({ error: err.message });
     }
 });
 

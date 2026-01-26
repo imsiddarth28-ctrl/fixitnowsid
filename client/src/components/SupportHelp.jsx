@@ -59,7 +59,7 @@ const SupportHelp = () => {
             category: 'CREDIT_ALLOCATION',
             questions: [
                 { q: 'When are credits disbursed?', a: 'Credits are allocated post-mission verification, typically within one solar cycle.' },
-                { q: 'What are the platform protocols?', a: 'FixItNow standard protocol reserves a 20% service allocation for ongoing system maintenance.' },
+                { q: 'What are the platform protocols?', a: 'SAHAKAR standard protocol reserves a 20% service allocation for ongoing system maintenance.' },
                 { q: 'How can I maximize allocation?', a: 'Maintain high trust scores, complete complex missions, and maintain high availability during peak cycles.' }
             ]
         }
@@ -152,7 +152,7 @@ const SupportHelp = () => {
                 >
                     <Phone size={isMobile ? 32 : 40} style={{ marginBottom: '16px', color: 'var(--text)' }} />
                     <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '8px' }}>VOICE_CHANNEL</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>+1 (800) FIX-IT-NOW</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>+1 (800) SAHAKAR</p>
                 </motion.div>
 
                 <motion.div
@@ -167,7 +167,7 @@ const SupportHelp = () => {
                 >
                     <Mail size={isMobile ? 32 : 40} style={{ marginBottom: '16px', color: 'var(--text)' }} />
                     <h3 style={{ fontSize: '1.1rem', fontWeight: '900', marginBottom: '8px' }}>ENCRYPTED_MAIL</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>support@fixitnow.com</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>support@sahakar.com</p>
                 </motion.div>
             </div>
 
@@ -325,7 +325,7 @@ const SupportHelp = () => {
                         <div className="bento-card glass" style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '32px 20px' : '48px', borderRadius: isMobile ? '32px' : '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                             <h3 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-0.02em' }}>INITIATE_UPLINK</h3>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontWeight: '500' }}>
-                                Deploy a secure communication channel to FixItNow command center.
+                                Deploy a secure communication channel to SAHAKAR command center.
                             </p>
 
                             <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>

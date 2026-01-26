@@ -202,7 +202,7 @@ const TechnicianDashboard = () => {
                                 }}>
                                     <Zap size={18} />
                                 </div>
-                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>FixItNow</span>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>SAHAKAR</span>
                                 <span style={{ fontSize: '0.65rem', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', fontWeight: '800' }}>PRO</span>
                             </div>
                             {window.innerWidth < 1024 && (

@@ -41,7 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
-  res.send('FixItNow Vercel-Native Real-Time Server Active 🚀 (Pusher Powered)');
+  res.send('SAHAKAR Vercel-Native Real-Time Server Active 🚀 (Pusher Powered)');
 });
 
 app.get('/api', (req, res) => {

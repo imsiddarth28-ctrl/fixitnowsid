@@ -7,7 +7,7 @@ const Technician = require('../models/Technician');
 const Job = require('../models/Job');
 // Add other models if needed
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixitnow';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sahakar';
 
 const resetDatabase = async () => {
     try {
