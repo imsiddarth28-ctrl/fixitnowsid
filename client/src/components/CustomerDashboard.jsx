@@ -4,7 +4,7 @@ import {
     Activity, Bell, Settings, LogOut, Plus,
     ArrowRight, CheckCircle, Clock, Shield,
     User, MessageSquare, Calendar, DollarSign,
-    Star, Wallet, History, HelpCircle, Search, Menu, X, Home
+    Star, Wallet, History, HelpCircle, Search, Menu, X, Home, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,7 +19,12 @@ import { subscribeToEvent } from '../socket';
 const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
-    const [activeView, setActiveView] = useState('overview');
+
+    // Persist active view in localStorage
+    const [activeView, setActiveView] = useState(() => {
+        return localStorage.getItem('customerActiveView') || 'overview';
+    });
+
     const [stats, setStats] = useState({
         totalBookings: 0,
         activeJobs: 0,
@@ -30,6 +35,11 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+    // Save active view to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('customerActiveView', activeView);
+    }, [activeView]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -269,7 +279,7 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                 {theme === 'dark' ? '☀️' : '🌙'}
                             </button>
                             <button
-                                onClick={() => setActiveTab('services')}
+                                onClick={() => setActiveView('services')}
                                 className="btn btn-primary"
                                 style={{ padding: '0 16px', height: '40px', borderRadius: '12px', gap: '8px', fontSize: '0.85rem', fontWeight: '700' }}
                             >
@@ -288,49 +298,113 @@ const CustomerDashboard = ({ setActiveTab, activeJob, setActiveJob }) => {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
                                 >
-                                    <div style={{ marginBottom: '32px' }}>
-                                        <h1 style={{ fontSize: window.innerWidth < 768 ? '1.8rem' : '2.2rem', fontWeight: '800', marginBottom: '8px' }}>
+                                    <div style={{ marginBottom: '40px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                            <div style={{
+                                                width: '8px',
+                                                height: '8px',
+                                                borderRadius: '50%',
+                                                background: 'var(--success)',
+                                                boxShadow: '0 0 8px var(--success)'
+                                            }} />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--success)', letterSpacing: '0.05em' }}>ONLINE</span>
+                                        </div>
+                                        <h1 style={{ fontSize: window.innerWidth < 768 ? '1.8rem' : '2.2rem', fontWeight: '800', marginBottom: '8px', lineHeight: '1.2' }}>
                                             Welcome back, {user?.name?.split(' ')[0]}!
                                         </h1>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Here's an overview of your service activity.</p>
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>
+                                    {/* Stats Grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '40px' }}>
                                         <StatCard label="Active Jobs" value={stats.activeJobs} icon={Activity} trend={stats.activeJobs > 0 ? "LIVE" : "NONE"} />
                                         <StatCard label="Completed" value={stats.completedJobs} icon={CheckCircle} trend={stats.completedJobs > 0 ? `+${stats.completedJobs}` : "0"} />
                                         <StatCard label="Total Spent" value={`$${stats.totalSpent}`} icon={Wallet} />
                                         <StatCard label="Rating" value={stats.trends?.trust?.score || "5.0"} icon={Star} trend="⭐" />
                                     </div>
 
-                                    <section>
-                                        <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '20px' }}>Quick Actions</h3>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                                            {[
-                                                { title: 'Find Technicians', desc: 'Browse available experts', icon: Search, action: () => setActiveTab('services') },
-                                                { title: 'My Bookings', desc: 'View booking history', icon: History, action: () => setActiveView('history') },
-                                                { title: 'Get Help', desc: 'Contact support', icon: HelpCircle, action: () => setActiveView('support') },
-                                                { title: 'My Profile', desc: 'Update settings', icon: Settings, action: () => setActiveView('profile') }
-                                            ].map((action, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    whileHover={{ y: -4 }}
-                                                    onClick={action.action}
-                                                    className="bento-card glass"
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                        padding: '20px',
-                                                        background: 'var(--bg-secondary)',
-                                                        border: '1px solid var(--border)',
-                                                        borderRadius: '16px'
-                                                    }}
-                                                >
-                                                    <action.icon size={24} style={{ marginBottom: '12px', color: 'var(--text)' }} />
-                                                    <div style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '4px' }}>{action.title}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{action.desc}</div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    </section>
+                                    {/* Two Column Layout */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 1024 ? '1fr' : '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
+                                        {/* Quick Actions */}
+                                        <section>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '16px' }}>Quick Actions</h3>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                                                {[
+                                                    { title: 'Find Technicians', desc: 'Browse experts', icon: Search, action: () => setActiveView('services'), color: 'var(--accent)' },
+                                                    { title: 'My Bookings', desc: 'View history', icon: History, action: () => setActiveView('history'), color: 'var(--text)' },
+                                                    { title: 'Get Help', desc: 'Contact support', icon: HelpCircle, action: () => setActiveView('support'), color: 'var(--text)' },
+                                                    { title: 'My Profile', desc: 'Update settings', icon: Settings, action: () => setActiveView('profile'), color: 'var(--text)' }
+                                                ].map((action, i) => (
+                                                    <motion.div
+                                                        key={i}
+                                                        whileHover={{ y: -4, scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={action.action}
+                                                        className="bento-card"
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            padding: '18px',
+                                                            background: 'var(--bg-secondary)',
+                                                            border: '1px solid var(--border)',
+                                                            borderRadius: '14px',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '10px',
+                                                            background: i === 0 ? 'var(--text)' : 'var(--bg-tertiary)',
+                                                            color: i === 0 ? 'var(--bg)' : 'var(--text)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            marginBottom: '12px'
+                                                        }}>
+                                                            <action.icon size={18} />
+                                                        </div>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '4px' }}>{action.title}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{action.desc}</div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        {/* Recent Activity */}
+                                        <section>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '16px' }}>Recent Activity</h3>
+                                            <div className="bento-card" style={{
+                                                padding: '20px',
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '14px',
+                                                minHeight: '200px'
+                                            }}>
+                                                {stats.completedJobs > 0 ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '10px' }}>
+                                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <CheckCircle size={16} />
+                                                            </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>Service Completed</div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Recently</div>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                                            {stats.completedJobs} total completed jobs
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+                                                        <TrendingUp size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+                                                        <div style={{ fontSize: '0.85rem' }}>No recent activity</div>
+                                                        <div style={{ fontSize: '0.75rem', marginTop: '4px' }}>Book a service to get started!</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </section>
+                                    </div>
                                 </motion.div>
                             )}
 
